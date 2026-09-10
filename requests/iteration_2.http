@@ -1,8 +1,368 @@
-POST http://localhost:80/api/item
+#Не забываем выбрать окружения для корректной работы по уполчанию стоит 👉 Run with: No Environment
+
+#Итерация 2:
+#1. Депозит денег пользователем
+#2. Перевод денег с одного аккаунта на другой
+#3. Изменение имени пользователя
+
+### 1. Получение токена админа
+# @name loginAdmin
+POST {{host}}{{apiV1}}auth/login
 Content-Type: application/json
 
 {
-  "id": 99,
-  "content": "new-element"
+  "username": "{{users.admin.username}}",
+  "password": "{{users.admin.password}}"
 }
-###
+
+> {%
+    client.global.set("tokenAdmin", response.headers.valueOf("Authorization"));
+    client.log("Сохранённый токен: " + response.headers.valueOf("Authorization"));
+%}
+
+
+### 2. Создание пользователя vadim
+POST {{host}}{{apiV1}}admin/users
+Content-Type: application/json
+Authorization: {{tokenAdmin}}
+
+{
+  "username": "{{users.user.username}}",
+  "password": "{{users.user.password}}",
+  "role": "USER"
+}
+
+
+### 3. Получение токена пользователя
+# @name login
+POST {{host}}{{apiV1}}auth/login
+Content-Type: application/json
+
+{
+  "username": "{{users.user.username}}",
+  "password": "{{users.user.password}}"
+}
+
+> {%
+    client.global.set("token", response.headers.valueOf("Authorization"));
+    client.log("Сохранённый токен: " + response.headers.valueOf("Authorization"));
+%}
+
+
+### 4. Создание аккаунта пользователю
+POST {{host}}{{apiV1}}accounts
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "customer": {
+    "username": "{{users.user.username}}",
+    "password": "{{users.user.password}}",
+    "role": "USER"
+  }
+}
+
+
+
+### Изменение имени пользователя
+
+### Позитивные
+### 1. С минимальным значением символов
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "I I"
+}
+
+### 2. Со средним значением символов
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John Smith"
+}
+
+### 3. Со средним значением символов кирилица
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "Самый Главный"
+}
+
+### 4. С максимальным значением
+### Какой максимум??????????
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "JohnJohnJohn SmithSmithSmith"
+}
+
+### Негативные
+### 1. Одно слово
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John"
+}
+
+### 2. Три слова
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John John John"
+}
+
+### 3. Два пробела между словами
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John  John"
+}
+
+### 4. Пробел перед словом
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": " John John"
+}
+
+### 5. Дефис между словами
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John-John"
+}
+
+### 6. Tab вместо пробела
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John\tSmith"
+}
+
+### 7. Слово и цифра
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John 1"
+}
+
+### 8. Одни пробелы
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "        "
+}
+
+### 9. Пустая строка
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": ""
+}
+
+### 10. Слово и пробел
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John  "
+}
+
+### 11. Цифра в имени
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John John1"
+}
+
+### 12. Спецсимвол в имени
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John John%"
+}
+
+### 13. Массив вместо строки
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": [
+    "John",
+    "Smith"
+  ]
+}
+
+### 14. Цифры вмето текста
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": 123
+}
+
+### 15. null в параметре name
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": null
+}
+
+### 16. Запрос без тела
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+
+### 17. Запрос c пустым телом
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{}
+
+### 18. Запрос без токеном
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+
+{
+  "name": "John John"
+}
+
+
+### 19. Запрос с поддельным токеном
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: Basic d3Jvbmc6d3Jvbmc=
+
+{
+  "name": "John A"
+}
+
+
+### Депозит пользователя
+
+### Позитивные
+### 1. Создать депозит
+POST {{host}}{{apiV1}}accounts
+Content-Type: application/json
+Authorization: {{token}}
+
+### 2. Внести деньги на депозит 5000
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 5000
+}
+
+### 3. Внести деньги на депозит 4999
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 4999
+}
+
+### 4. Внести деньги на депозит 1
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 1
+}
+
+
+### 5. Внести деньги на депозит 2
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 2
+}
+
+
+### Негативные
+### 1. Внести деньги на депозит 5001
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 5001
+}
+
+### 2. Внести деньги на депозит 0
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 0
+}
+
+### 3. Внести деньги на депозит -1
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": -1
+}
+
+
+### 4. Внести деньги на несуществующий депозит
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 3,
+  "amount": 10
+}
