@@ -461,14 +461,14 @@ Authorization: {{token}}
 ### Переводы
 
 ### Позитивные
-### 1. Перевод максимальной суммы 10000 себе при балансе 10000
+### 1. Перевод максимальной суммы 10000  при балансе 10000
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
 Authorization: {{token}}
 
 {
   "senderAccountId": 4,
-  "receiverAccountId": 35,
+  "receiverAccountId": 34,
   "amount": 10000
 }
 ### 2. Перевод суммы 9999 себе при балансе 10000
@@ -493,51 +493,7 @@ Authorization: {{token}}
   "amount": 2
 }
 
-### 4. Перевод минимальной суммы 1 себе при балансе 1
-POST {{host}}{{apiV1}}accounts/transfer
-Content-Type: application/json
-Authorization: {{token}}
-
-{
-  "senderAccountId": 4,
-  "receiverAccountId": 35,
-  "amount": 1
-}
-
-### 5. Перевод максимальной суммы 10000 не себе при балансе 10000
-POST {{host}}{{apiV1}}accounts/transfer
-Content-Type: application/json
-Authorization: {{token}}
-
-{
-  "senderAccountId": 4,
-  "receiverAccountId": 34,
-  "amount": 10000
-}
-
-### 6. Перевод суммы 9999 не себе при балансе 10000
-POST {{host}}{{apiV1}}accounts/transfer
-Content-Type: application/json
-Authorization: {{token}}
-
-{
-  "senderAccountId": 4,
-  "receiverAccountId": 34,
-  "amount": 9999
-}
-
-### 7. Перевод суммы 2 не себе при балансе 3
-POST {{host}}{{apiV1}}accounts/transfer
-Content-Type: application/json
-Authorization: {{token}}
-
-{
-  "senderAccountId": 4,
-  "receiverAccountId": 34,
-  "amount": 2
-}
-
-### 8. Перевод минимальной суммы 1 не себе при балансе 1
+### 4. Перевод минимальной суммы 1  при балансе 1
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
 Authorization: {{token}}
@@ -548,7 +504,7 @@ Authorization: {{token}}
   "amount": 1
 }
 
-### 9. Перевод минимальной суммы 3222 не себе при балансе 23263
+### 5. Перевод  суммы 3222 не себе при балансе 23263
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
 Authorization: {{token}}
@@ -559,7 +515,7 @@ Authorization: {{token}}
   "amount": 3222
 }
 
-### 10. Баланс не изменяется при переводе денег с со счета на тот же счет
+### 6. Баланс не изменяется при переводе денег с со счета на тот же счет
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
 Authorization: {{token}}
@@ -570,7 +526,7 @@ Authorization: {{token}}
   "amount": 10000
 }
 
-### 11. Последовательный перевод нескольких сумм
+### 7. Последовательный перевод нескольких сумм
 ### Переводим  с акаунта А на акаунт B
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
@@ -593,7 +549,7 @@ Authorization: {{token}}
   "amount": 5670
 }
 
-### 12. Последовательный перевод одной суммы денег с разных аккаунтов
+### 8. Последовательный перевод одной суммы денег с разных аккаунтов
 ### Переводим деньги с акаунта А на акаунт В
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
@@ -614,6 +570,7 @@ Authorization: {{token}}
   "receiverAccountId": 38,
   "amount": 10000
 }
+
 
 ### Негативыне
 ### 1. Перевод суммы 0
