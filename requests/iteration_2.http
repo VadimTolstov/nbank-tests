@@ -1,5 +1,7 @@
 #Не забываем выбрать окружения для корректной работы по уполчанию стоит 👉 Run with: No Environment
-
+### С твоего позволения не буду расписывать в тестах, что помима кода ответа надо проверить,
+### что состояние изменилось при положительных тестах и не изменилось при негативных тестах (имя поменялось, баланс при транзакции изменился
+### или при негативном кейсе не изменился баланс) через дополнительный запрос или БД.
 #Итерация 2:
 #1. Депозит денег пользователем
 #2. Перевод денег с одного аккаунта на другой
@@ -283,7 +285,7 @@ POST {{host}}{{apiV1}}accounts
 Content-Type: application/json
 Authorization: {{token}}
 
-### 2. Внести деньги на депозит 5000
+### 2. Внести максимальное значение на депозит 5000
 POST {{host}}{{apiV1}}accounts/deposit
 Content-Type: application/json
 Authorization: {{token}}
@@ -303,7 +305,7 @@ Authorization: {{token}}
   "amount": 4999
 }
 
-### 4. Внести деньги на депозит 1
+### 4. Внести минимальное значение на депозит 1
 POST {{host}}{{apiV1}}accounts/deposit
 Content-Type: application/json
 Authorization: {{token}}
@@ -363,6 +365,352 @@ Content-Type: application/json
 Authorization: {{token}}
 
 {
-  "accountId": 3,
+  "accountId": 999999999,
   "amount": 10
+}
+
+### 5. Внести деньги на депозит в чужой аккаунт
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 34,
+  "amount": 10
+}
+
+### 6. Внести деньги на депозит без токена
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+
+{
+  "accountId": 4,
+  "amount": 10
+}
+
+### 7. null в параметре  amount
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": null
+}
+
+
+### 8. Строка в параметре  amount
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": "sda"
+}
+
+### 9. Строка в параметре  accountId
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": "da",
+  "amount": 10
+}
+
+### 10. null в параметре  accountId
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": null,
+  "amount": 10
+}
+
+
+### 11. Лишние поля в теле запроса
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 10,
+  "hack": "yes"
+}
+
+### 12. Запрос с поддельным токеном
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: Basic d3Jvbmc6d3Jvbmc=
+
+{
+  "accountId": 4,
+  "amount": 10
+}
+
+### 13. Запрос без тела
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+
+
+### Переводы
+
+### Позитивные
+### 1. Перевод максимальной суммы 10000 себе при балансе 10000
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 35,
+  "amount": 10000
+}
+### 2. Перевод суммы 9999 себе при балансе 10000
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 35,
+  "amount": 9999
+}
+
+### 3. Перевод суммы 2 себе при балансе 3
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 35,
+  "amount": 2
+}
+
+### 4. Перевод минимальной суммы 1 себе при балансе 1
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 35,
+  "amount": 1
+}
+
+### 5. Перевод максимальной суммы 10000 не себе при балансе 10000
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 10000
+}
+
+### 6. Перевод суммы 9999 не себе при балансе 10000
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 9999
+}
+
+### 7. Перевод суммы 2 не себе при балансе 3
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 2
+}
+
+### 8. Перевод минимальной суммы 1 не себе при балансе 1
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 1
+}
+
+### 9. Перевод минимальной суммы 3222 не себе при балансе 23263
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 3222
+}
+
+### 10. Баланс не изменяется при переводе денег с со счета на тот же счет
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 4,
+  "amount": 10000
+}
+
+### 11. Последовательный перевод нескольких сумм
+### Переводим  с акаунта А на акаунт B
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 10000
+}
+
+### Сразу еще раз с акаунта А на акаунт B
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 5670
+}
+
+### 12. Последовательный перевод одной суммы денег с разных аккаунтов
+### Переводим деньги с акаунта А на акаунт В
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 10000
+}
+### После получения денег от акаунта А, акаунт B переводит полученные деньги акаунту С
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 34,
+  "receiverAccountId": 38,
+  "amount": 10000
+}
+
+### Негативыне
+### 1. Перевод суммы 0
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 0
+}
+
+### 2. Перевод суммы 10001
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 10001
+}
+
+### 3. Перевод суммы -1
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": -1
+}
+
+### 4. Перевод суммы 8000 не себе при балансе 5000
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 36,
+  "amount": 8000
+}
+
+### 5. Перевод суммы 8000  себе при балансе 5000
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 35,
+  "amount": 8000
+}
+
+### 6. Перевод денег с чужого счета на свой
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 36,
+  "receiverAccountId": 4,
+  "amount": 8000
+}
+
+### 7. Перевод денег с несуществующего  счета на свой
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 999999,
+  "receiverAccountId": 4,
+  "amount": 8000
+}
+
+### 8. Перевод денег с поддельным токеном
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: Basic d3Jvbmc6d3Jvbmc=
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 36,
+  "amount": 8000
+}
+
+
+### 9. Перевод денег без токена
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 36,
+  "amount": 8000
 }
