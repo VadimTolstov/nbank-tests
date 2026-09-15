@@ -15,7 +15,7 @@ import java.util.Base64;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class DepositTest extends BaseApiTest {
+public class DepositTest extends BaseTest {
 
     private String userName;
     private String token;

@@ -7,7 +7,7 @@ public enum DockerConfig implements Config {
     instance;
 
     @Override
-    public @NotNull String frontUrl() {
+    public @NotNull String nbankUrl() {
         return "";
     }
 }

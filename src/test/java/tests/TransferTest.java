@@ -13,7 +13,7 @@ import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TransferTest extends BaseApiTest {
+public class TransferTest extends BaseTest {
 
     private String token;
     private long senderAccountId;        // наш основной аккаунт

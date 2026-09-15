@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 
-public class UpdateUserNameTest extends BaseApiTest {
+public class UpdateUserNameTest extends BaseTest {
 
     private static final String INVALID_NAME_ERROR = "Name must contain two words with letters only";
 

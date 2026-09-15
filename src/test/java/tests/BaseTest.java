@@ -1,15 +1,14 @@
 package tests;
 
-import io.restassured.RestAssured;
-import io.restassured.filter.log.RequestLoggingFilter;
-import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
+import org.assertj.core.api.SoftAssertions;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -18,18 +17,23 @@ import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 
-public abstract class BaseApiTest {
+public abstract class BaseTest {
 
     protected static final String BASE_URL = "http://localhost:4111";
     protected static final String API_V1 = "/api/v1";
     protected static final String ADMIN_AUTH = "Basic YWRtaW46YWRtaW4=";   // admin:admin
     protected static final String DEFAULT_PASSWORD = "Kate2000#";
 
-    @BeforeAll
-    public static void setupRestAssured() {
-        RestAssured.filters(
-                List.of(new RequestLoggingFilter(),
-                        new ResponseLoggingFilter()));
+    protected SoftAssertions softly;
+
+    @BeforeEach
+    public void setupTest() {
+        this.softly = new SoftAssertions();
+    }
+
+    @AfterEach
+    public void afterTest() {
+        softly.assertAll();
     }
 
     // ---------- helpers ----------
@@ -75,7 +79,9 @@ public abstract class BaseApiTest {
                 .header("Authorization");
     }
 
-    /** Создаёт аккаунт пользователю и возвращает его id. */
+    /**
+     * Создаёт аккаунт пользователю и возвращает его id.
+     */
     protected long createAccount(String token, String userName, String password) {
         Response response = given()
                 .contentType(ContentType.JSON)
@@ -96,7 +102,9 @@ public abstract class BaseApiTest {
         return response.jsonPath().getLong("id");
     }
 
-    /** POST /accounts/deposit. token == null → без Authorization. */
+    /**
+     * POST /accounts/deposit. token == null → без Authorization.
+     */
     protected Response deposit(String token, Object accountId, Object amount) {
         Map<String, Object> body = new HashMap<>();
         body.put("accountId", accountId);
@@ -112,7 +120,9 @@ public abstract class BaseApiTest {
         return request.post(BASE_URL + API_V1 + "/accounts/deposit");
     }
 
-    /** POST /accounts/transfer. token == null → без Authorization. */
+    /**
+     * POST /accounts/transfer. token == null → без Authorization.
+     */
     protected Response transfer(String token, Object senderId, Object receiverId, Object amount) {
         Map<String, Object> body = new HashMap<>();
         body.put("senderAccountId", senderId);

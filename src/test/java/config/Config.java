@@ -11,7 +11,7 @@ public interface Config {
     }
 
     @NotNull
-    String frontUrl();
+    String nbankUrl();
 
 
     default @NotNull String url(@NonNull String type, @NonNull String host, @NonNull String port) {
