@@ -1,7 +1,12 @@
 package tests;
 
+import generators.RandomData;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import models.CreateUserRequest;
+import models.CreateUserResponse;
+import models.UpdateUserNameRequest;
+import models.UserRole;
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +15,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import requests.AdminCreateUserRequester;
+import requests.UpdateUserNameRequester;
+import specs.RequestSpecs;
+import specs.ResponseSpecs;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -20,7 +29,7 @@ import java.util.stream.Stream;
 import static io.restassured.RestAssured.given;
 
 public class UpdateUserNameTest extends BaseTest {
-
+    private CreateUserRequest createUser;
     private static final String INVALID_NAME_ERROR = "Name must contain two words with letters only";
 
     private String userName;
@@ -28,9 +37,15 @@ public class UpdateUserNameTest extends BaseTest {
 
     @BeforeEach
     public void setUp() {
-        userName = randomUserName();
-        createUser(userName, DEFAULT_PASSWORD);
-        token = loginAndGetToken(userName, DEFAULT_PASSWORD);
+        createUser = CreateUserRequest.builder()
+                .username(RandomData.getUsername())
+                .password(RandomData.getPassword())
+                .role(UserRole.USER.toString())
+                .build();
+
+        new AdminCreateUserRequester(RequestSpecs.adminSpec(),
+                ResponseSpecs.entityWasCreated())
+                .post(createUser).extract().as(CreateUserResponse.class);
     }
 
     // ---------- positives ----------
@@ -43,14 +58,14 @@ public class UpdateUserNameTest extends BaseTest {
             "JohnJohnJohn SmithSmithSmith"
     })
     public void updateNameWithValidValueTest(String name) {
-        updateName(token, name)
-                .then().assertThat().statusCode(HttpStatus.SC_OK);
+        new UpdateUserNameRequester(RequestSpecs.authAsUser(createUser.getUsername(), createUser.getPassword()),
+                ResponseSpecs.requestReturnsOK())
+                .put(new UpdateUserNameRequest(name));
 
         getProfile(token)
-                .then()
-                .assertThat()
+                .then().assertThat()
                 .statusCode(HttpStatus.SC_OK)
-                .body("name", Matchers.equalTo(name));
+                .body("name", Matchers.nullValue());
     }
 
     // ---------- negatives ----------

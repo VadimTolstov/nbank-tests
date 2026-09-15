@@ -3,23 +3,22 @@ package requests;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.LoginUserRequest;
+import models.UpdateUserNameRequest;
 
 import static io.restassured.RestAssured.given;
 
-public class LoginUserRequester extends Request implements Postable<LoginUserRequest> {
-    public LoginUserRequester(RequestSpecification requestSpecification, ResponseSpecification responseSpecification) {
+public class UpdateUserNameRequester extends Request implements Puttable<UpdateUserNameRequest> {
+    public UpdateUserNameRequester(RequestSpecification requestSpecification, ResponseSpecification responseSpecification) {
         super(requestSpecification, responseSpecification);
     }
 
     @Override
-    public ValidatableResponse post(LoginUserRequest model) {
+    public ValidatableResponse put(UpdateUserNameRequest model) {
         return given()
                 .spec(requestSpecification)
                 .body(model)
-                .post("/api/v1/auth/login")
+                .put("/api/v1/customer/profile")
                 .then()
-                .assertThat()
                 .spec(responseSpecification);
     }
 }

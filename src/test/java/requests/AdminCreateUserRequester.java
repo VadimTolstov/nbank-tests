@@ -7,7 +7,7 @@ import models.CreateUserRequest;
 
 import static io.restassured.RestAssured.given;
 
-public class AdminCreateUserRequester extends Request<CreateUserRequest> {
+public class AdminCreateUserRequester extends Request implements Postable<CreateUserRequest> {
     public AdminCreateUserRequester(RequestSpecification requestSpecification, ResponseSpecification responseSpecification) {
         super(requestSpecification, responseSpecification);
     }
