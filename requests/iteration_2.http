@@ -295,47 +295,47 @@ Authorization: {{token}}
   "amount": 5000
 }
 
-### 3. Внести деньги на депозит 4999
+### 3. Внести деньги на депозит 4999.99
 POST {{host}}{{apiV1}}accounts/deposit
 Content-Type: application/json
 Authorization: {{token}}
 
 {
   "accountId": 4,
-  "amount": 4999
+  "amount": 4999.99
 }
 
-### 4. Внести минимальное значение на депозит 1
+### 4. Внести минимальное значение на депозит 0.01
 POST {{host}}{{apiV1}}accounts/deposit
 Content-Type: application/json
 Authorization: {{token}}
 
 {
   "accountId": 4,
-  "amount": 1
+  "amount": 0.01
 }
 
 
-### 5. Внести деньги на депозит 2
+### 5. Внести деньги на депозит 0.02
 POST {{host}}{{apiV1}}accounts/deposit
 Content-Type: application/json
 Authorization: {{token}}
 
 {
   "accountId": 4,
-  "amount": 2
+  "amount": 0.02
 }
 
 
 ### Негативные
-### 1. Внести деньги на депозит 5001
+### 1. Внести деньги на депозит 5000.01
 POST {{host}}{{apiV1}}accounts/deposit
 Content-Type: application/json
 Authorization: {{token}}
 
 {
   "accountId": 4,
-  "amount": 5001
+  "amount": 5000.01
 }
 
 ### 2. Внести деньги на депозит 0
@@ -348,14 +348,14 @@ Authorization: {{token}}
   "amount": 0
 }
 
-### 3. Внести деньги на депозит -1
+### 3. Внести деньги на депозит -0.01
 POST {{host}}{{apiV1}}accounts/deposit
 Content-Type: application/json
 Authorization: {{token}}
 
 {
   "accountId": 4,
-  "amount": -1
+  "amount": -0.01
 }
 
 
@@ -471,7 +471,7 @@ Authorization: {{token}}
   "receiverAccountId": 34,
   "amount": 10000
 }
-### 2. Перевод суммы 9999 себе при балансе 10000
+### 2. Перевод суммы 9999.99 себе при балансе 9999.99
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
 Authorization: {{token}}
@@ -479,10 +479,10 @@ Authorization: {{token}}
 {
   "senderAccountId": 4,
   "receiverAccountId": 35,
-  "amount": 9999
+  "amount": 9999.99
 }
 
-### 3. Перевод суммы 2 себе при балансе 3
+### 3. Перевод суммы 0.02 себе при балансе 0.03
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
 Authorization: {{token}}
@@ -493,7 +493,7 @@ Authorization: {{token}}
   "amount": 2
 }
 
-### 4. Перевод минимальной суммы 1  при балансе 1
+### 4. Перевод минимальной суммы 0.01  при балансе 0.01
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
 Authorization: {{token}}
@@ -501,7 +501,7 @@ Authorization: {{token}}
 {
   "senderAccountId": 4,
   "receiverAccountId": 34,
-  "amount": 1
+  "amount": 0.01
 }
 
 ### 5. Перевод  суммы 3222 не себе при балансе 23263
@@ -584,7 +584,7 @@ Authorization: {{token}}
   "amount": 0
 }
 
-### 2. Перевод суммы 10001
+### 2. Перевод суммы 10000.01
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
 Authorization: {{token}}
@@ -592,10 +592,10 @@ Authorization: {{token}}
 {
   "senderAccountId": 4,
   "receiverAccountId": 34,
-  "amount": 10001
+  "amount": 10000.01
 }
 
-### 3. Перевод суммы -1
+### 3. Перевод суммы -0.01
 POST {{host}}{{apiV1}}accounts/transfer
 Content-Type: application/json
 Authorization: {{token}}
@@ -603,7 +603,7 @@ Authorization: {{token}}
 {
   "senderAccountId": 4,
   "receiverAccountId": 34,
-  "amount": -1
+  "amount": -0.01
 }
 
 ### 4. Перевод суммы 8000 не себе при балансе 5000
