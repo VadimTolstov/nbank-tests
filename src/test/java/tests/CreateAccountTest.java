@@ -16,7 +16,7 @@ public class CreateAccountTest extends BaseTest {
         CreateUserRequest userRequest = CreateUserRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
-                .role(UserRole.USER.toString())
+                .role(UserRole.USER)
                 .build();
 
         new AdminCreateUserRequester(

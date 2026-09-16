@@ -20,7 +20,7 @@ public class CreateUserTest extends BaseTest {
         CreateUserRequest createUserRequest = CreateUserRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
-                .role(UserRole.USER.toString())
+                .role(UserRole.USER)
                 .build();
 
         CreateUserResponse createUserResponse = new AdminCreateUserRequester(RequestSpecs.adminSpec(),
@@ -45,7 +45,7 @@ public class CreateUserTest extends BaseTest {
 
     @MethodSource("userInvalidData")
     @ParameterizedTest
-    public void adminCanNotCreateUserWithInvalidData(String username, String password, String role, String errorKey, String errorValue) {
+    public void adminCanNotCreateUserWithInvalidData(String username, String password, UserRole role, String errorKey, String errorValue) {
         CreateUserRequest createUserRequest = CreateUserRequest.builder()
                 .username(username)
                 .password(password)

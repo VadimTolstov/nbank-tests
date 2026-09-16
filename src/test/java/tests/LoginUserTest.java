@@ -30,7 +30,7 @@ public class LoginUserTest extends BaseTest {
         CreateUserRequest userRequest = CreateUserRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
-                .role(UserRole.USER.toString())
+                .role(UserRole.USER)
                 .build();
 
         new AdminCreateUserRequester(

@@ -30,4 +30,10 @@ public class ResponseSpecs {
                 .expectBody(errorKey, Matchers.equalTo(errorValue))
                 .build();
     }
+
+    public static ResponseSpecification requestReturnsUnauthorizedRequest() {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_UNAUTHORIZED)
+                .build();
+    }
 }

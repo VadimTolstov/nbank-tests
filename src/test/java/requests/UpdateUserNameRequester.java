@@ -12,13 +12,28 @@ public class UpdateUserNameRequester extends Request implements Puttable<UpdateU
         super(requestSpecification, responseSpecification);
     }
 
-    @Override
-    public ValidatableResponse put(UpdateUserNameRequest model) {
-        return given()
-                .spec(requestSpecification)
-                .body(model)
-                .put("/api/v1/customer/profile")
+    private ValidatableResponse send(Object body) {
+        RequestSpecification specification = given().spec(requestSpecification);
+        if (body != null) {
+            specification.body(body);
+        }
+        return specification.put("/api/v1/customer/profile")
                 .then()
                 .spec(responseSpecification);
+    }
+
+    @Override
+    public ValidatableResponse put(UpdateUserNameRequest model) {
+        return send(model);
+    }
+
+    // сырое тело — как строка, без сериализации через Jackson
+    public ValidatableResponse putRaw(String rawBody) {
+        return send(rawBody);
+    }
+
+    // PUT без body
+    public ValidatableResponse putNoBody() {
+        return send(null);
     }
 }

@@ -49,4 +49,10 @@ public class RequestSpecs {
                 .addHeader(AUTH_HEADER, userAuthHeader)
                 .build();
     }
+
+    public static RequestSpecification invalidTokenSpec(String token) {
+        return token == null
+                ? defaultRequestBuilder().build()
+                : defaultRequestBuilder().addHeader(AUTH_HEADER, token).build();
+    }
 }
