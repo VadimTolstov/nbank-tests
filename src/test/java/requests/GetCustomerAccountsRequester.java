@@ -3,21 +3,19 @@ package requests;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.UserRequest;
 
 import static io.restassured.RestAssured.given;
 
-public class AdminCreateUserRequester extends Request implements Postable<UserRequest> {
-    public AdminCreateUserRequester(RequestSpecification requestSpecification, ResponseSpecification responseSpecification) {
+public class GetCustomerAccountsRequester extends Request implements Gettable {
+    public GetCustomerAccountsRequester(RequestSpecification requestSpecification, ResponseSpecification responseSpecification) {
         super(requestSpecification, responseSpecification);
     }
 
     @Override
-    public ValidatableResponse post(UserRequest model) {
+    public ValidatableResponse get() {
         return given()
                 .spec(requestSpecification)
-                .body(model)
-                .post("/api/v1/admin/users")
+                .get("/api/v1/customer/accounts")
                 .then()
                 .assertThat()
                 .spec(responseSpecification);

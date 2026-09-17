@@ -1,7 +1,7 @@
 package tests;
 
 import generators.RandomData;
-import models.CreateUserRequest;
+import models.UserRequest;
 import models.UserRole;
 import org.junit.jupiter.api.Test;
 import requests.AdminCreateUserRequester;
@@ -13,7 +13,7 @@ public class CreateAccountTest extends BaseTest {
 
     @Test
     public void userCanCreateAccountTest() {
-        CreateUserRequest userRequest = CreateUserRequest.builder()
+        UserRequest userRequest = UserRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)

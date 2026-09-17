@@ -146,11 +146,12 @@ public abstract class BaseTest {
      */
     protected BigDecimal getBalance(String token, long accountId) {
         Response response = given()
+                .log().all()
                 .contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
                 .header("Authorization", token)
                 .get(BASE_URL + API_V1 + "/customer/accounts");
-        response.then().assertThat().statusCode(HttpStatus.SC_OK);
+        response.then().assertThat().statusCode(HttpStatus.SC_OK).log().all();
 
         List<Map<String, Object>> accounts = response.jsonPath().getList("$");
         for (Map<String, Object> acc : accounts) {

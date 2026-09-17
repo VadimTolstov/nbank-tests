@@ -1,7 +1,7 @@
 package tests;
 
 import generators.RandomData;
-import models.CreateUserRequest;
+import models.UserRequest;
 import models.LoginUserRequest;
 import models.UserRole;
 import org.hamcrest.Matchers;
@@ -27,7 +27,7 @@ public class LoginUserTest extends BaseTest {
 
     @Test
     public void userCanGenerateAuthTokenTest() {
-        CreateUserRequest userRequest = CreateUserRequest.builder()
+        UserRequest userRequest = UserRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)

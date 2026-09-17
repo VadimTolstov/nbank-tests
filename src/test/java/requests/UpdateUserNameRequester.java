@@ -28,12 +28,12 @@ public class UpdateUserNameRequester extends Request implements Puttable<UpdateU
     }
 
     // сырое тело — как строка, без сериализации через Jackson
-    public ValidatableResponse putRaw(String rawBody) {
-        return send(rawBody);
+    public void putRaw(String rawBody) {
+        send(rawBody);
     }
 
     // PUT без body
-    public ValidatableResponse putNoBody() {
-        return send(null);
+    public void putNoBody() {
+        send(null);
     }
 }

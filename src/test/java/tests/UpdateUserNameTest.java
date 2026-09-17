@@ -3,7 +3,7 @@ package tests;
 import generators.RandomData;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.CreateUserRequest;
+import models.UserRequest;
 import models.CreateUserResponse;
 import models.GetUserProfileResponse;
 import models.UpdateUserNameRequest;
@@ -29,7 +29,7 @@ public class UpdateUserNameTest extends BaseTest {
     private static final String ERROR_KEY = "error";
     private static final String INVALID_ERROR = "Bad Request";
 
-    private CreateUserRequest createUser;
+    private UserRequest createUser;
 
 
     private RequestSpecification authUser() {
@@ -61,7 +61,7 @@ public class UpdateUserNameTest extends BaseTest {
 
     @BeforeEach
     public void setUp() {
-        createUser = CreateUserRequest.builder()
+        createUser = UserRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)
