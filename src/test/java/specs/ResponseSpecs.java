@@ -36,4 +36,10 @@ public class ResponseSpecs {
                 .expectStatusCode(HttpStatus.SC_UNAUTHORIZED)
                 .build();
     }
+
+    public static ResponseSpecification requestReturnsForbidden() {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_FORBIDDEN)
+                .build();
+    }
 }

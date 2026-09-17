@@ -6,7 +6,6 @@ import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import models.*;
 import org.apache.http.HttpStatus;
-import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,12 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DepositTest extends BaseTest {
     private static final String INVALID_MESSAGE = "Invalid account or amount";
+    private static final String INVALID_MESSAGE_TYPE_NULL = "Invalid field types: accountId must be integer, amount must be number";
     private static final String INVALID_MESSAGE_LIMIT_5000 = "Deposit amount exceeds the 5000 limit";
     private static final String ERROR_KEY = "message";
     private static final BigDecimal MAX_AMOUNT = new BigDecimal("5000.00");
     private static final BigDecimal MIN_AMOUNT = new BigDecimal("0.01");
+    private static final Long NOT_EXIST_ACCOUNT_ID = 999_999_999L;
     private UserRequest createUser;
-    private BigDecimal before;
+    private BigDecimal beforeBalance;
     private Long accountId;
 
     private RequestSpecification authUser() {
@@ -56,9 +57,9 @@ public class DepositTest extends BaseTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private void addDeposit(ResponseSpecification responseSpecification, BigDecimal maxAmount) {
+    private void addDeposit(ResponseSpecification responseSpecification, BigDecimal amount) {
         new AddDepositMoneyRequester(authUser(), responseSpecification)
-                .post(new DepositRequest(accountId, maxAmount));
+                .post(new DepositRequest(accountId, amount));
     }
 
     private String userName;
@@ -81,7 +82,7 @@ public class DepositTest extends BaseTest {
         new CreateAccountRequester(authUser(), ResponseSpecs.entityWasCreated())
                 .post(null);
 
-        before = getAccountBalance();
+        beforeBalance = getAccountBalance();
         accountId = getAccountResponse().stream()
                 .mapToLong(CustomerAccount::getId).findFirst().getAsLong();
     }
@@ -93,8 +94,7 @@ public class DepositTest extends BaseTest {
     public void depositValidBoundaryAmountChangesBalanceTest(String amount) {
         BigDecimal deposit = new BigDecimal(amount);
         addDeposit(ResponseSpecs.requestReturnsOK(), deposit);
-
-        assertEquals(0, before.add(deposit).compareTo(getAccountBalance()),
+        assertEquals(0, beforeBalance.add(deposit).compareTo(getAccountBalance()),
                 "Баланс должен увеличиться ровно на " + amount);
     }
 
@@ -112,10 +112,8 @@ public class DepositTest extends BaseTest {
     @MethodSource("amountInvalidData")
     public void depositInvalidBoundaryAmountDoesNotChangeBalanceTest(String amount, String errorValue) {
         BigDecimal deposit = new BigDecimal(amount);
-
         addDeposit(ResponseSpecs.requestReturnsBadRequest(ERROR_KEY, errorValue), deposit);
-
-        assertEquals(0, before.compareTo(getAccountBalance()),
+        assertEquals(0, beforeBalance.compareTo(getAccountBalance()),
                 "Баланс не должен меняться при невалидной сумме " + amount);
     }
 
@@ -124,10 +122,8 @@ public class DepositTest extends BaseTest {
     @Test
     public void depositSequentiallyAccumulatesBalanceTest() {
         addDeposit(ResponseSpecs.requestReturnsOK(), MAX_AMOUNT);
-
         addDeposit(ResponseSpecs.requestReturnsOK(), MIN_AMOUNT);
-
-        assertEquals(0, before.add(MAX_AMOUNT).add(MIN_AMOUNT)
+        assertEquals(0, beforeBalance.add(MAX_AMOUNT).add(MIN_AMOUNT)
                 .compareTo(getAccountBalance()));
     }
 
@@ -135,68 +131,74 @@ public class DepositTest extends BaseTest {
 
     @Test
     public void depositWithNullAmountDoesNotChangeBalanceTest() {
-        BigDecimal before = getBalance(token, accountId);
-
-        deposit(token, accountId, null)
-                .then().assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
-
-        assertEquals(0, before.compareTo(getBalance(token, accountId)));
-    }
-
-    @Test
-    public void depositWithStringAmountDoesNotChangeBalanceTest() {
-        BigDecimal before = getBalance(token, accountId);
-
-        deposit(token, accountId, "sda")
-                .then().assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
-
-        assertEquals(0, before.compareTo(getBalance(token, accountId)));
+        addDeposit(ResponseSpecs.requestReturnsBadRequest(ERROR_KEY, INVALID_MESSAGE_TYPE_NULL), null);
+        assertEquals(0, beforeBalance.compareTo(getAccountBalance()));
     }
 
     @Test
     public void depositToNonExistentAccountTest() {
-        BigDecimal before = getBalance(token, accountId);
+        new AddDepositMoneyRequester(authUser(), ResponseSpecs.requestReturnsForbidden())
+                .post(new DepositRequest(NOT_EXIST_ACCOUNT_ID, MAX_AMOUNT));
 
-        deposit(token, 999_999_999L, new BigDecimal("10"))
-                .then().assertThat()
-                .statusCode(Matchers.anyOf(
-                        Matchers.equalTo(HttpStatus.SC_BAD_REQUEST),
-                        Matchers.equalTo(HttpStatus.SC_NOT_FOUND),
-                        Matchers.equalTo(HttpStatus.SC_FORBIDDEN)));
-
-        assertEquals(0, before.compareTo(getBalance(token, accountId)),
+        assertEquals(0, beforeBalance.compareTo(getAccountBalance()),
                 "Баланс нашего аккаунта не должен измениться");
     }
 
     @Test
     public void depositToForeignAccountDoesNotAffectBalancesTest() {
-        // создаём второго юзера и его аккаунт
-        String foreignUser = randomUserName();
-        createUser(foreignUser, DEFAULT_PASSWORD);
-        String foreignToken = loginAndGetToken(foreignUser, DEFAULT_PASSWORD);
-        long foreignAccount = createAccount(foreignToken, foreignUser, DEFAULT_PASSWORD);
+        UserRequest twoUser = UserRequest.builder()
+                .username(RandomData.getUsername())
+                .password(RandomData.getPassword())
+                .role(UserRole.USER)
+                .build();
+        // создаём второго пользователя
+        new AdminCreateUserRequester(RequestSpecs.adminSpec(),
+                ResponseSpecs.entityWasCreated())
+                .post(twoUser)
+                .extract()
+                .as(CreateUserResponse.class);
+        // получаем его токен
+        RequestSpecification tokenUserTwo = RequestSpecs.authAsUser(twoUser.getUsername(), twoUser.getPassword());
+        // создаём аккаунт для второго пользователя
+        new CreateAccountRequester(tokenUserTwo, ResponseSpecs.entityWasCreated())
+                .post(null);
+        // получаем данные об аккаунтах второго пользователя
+        GetCustomerAccountsResponse accountsUserTwo = new GetCustomerAccountsRequester(tokenUserTwo, ResponseSpecs.requestReturnsOK())
+                .get()
+                .extract()
+                .as(GetCustomerAccountsResponse.class);
+        // получаем баланс второго пользователя
+        BigDecimal balanceUserTwo = accountsUserTwo.stream()
+                .map(CustomerAccount::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // получаем id депозита второго пользователя
+        Long accountIdUserTwo = accountsUserTwo.stream()
+                .mapToLong(CustomerAccount::getId).findFirst().getAsLong();
+        // депозит от первого пользователя на депозит второго пользователя
+        new AddDepositMoneyRequester(authUser(), ResponseSpecs.requestReturnsForbidden())
+                .post(new DepositRequest(accountIdUserTwo, MAX_AMOUNT));
+        // получаем актуальный баланс второго пользователя
+        BigDecimal afterBalanceUserTwo = new GetCustomerAccountsRequester(tokenUserTwo, ResponseSpecs.requestReturnsOK())
+                .get()
+                .extract()
+                .as(GetCustomerAccountsResponse.class)
+                .stream()
+                .map(CustomerAccount::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal ourBefore = getBalance(token, accountId);
-        BigDecimal foreignBefore = getBalance(foreignToken, foreignAccount);
-
-        deposit(token, foreignAccount, new BigDecimal("10"))
-                .then().assertThat()
-                .statusCode(Matchers.anyOf(
-                        Matchers.equalTo(HttpStatus.SC_BAD_REQUEST),
-                        Matchers.equalTo(HttpStatus.SC_FORBIDDEN)));
-
-        assertEquals(0, ourBefore.compareTo(getBalance(token, accountId)),
+        assertEquals(0, beforeBalance.compareTo(getAccountBalance()),
                 "Наш баланс не должен измениться");
-        assertEquals(0, foreignBefore.compareTo(getBalance(foreignToken, foreignAccount)),
+        assertEquals(0, balanceUserTwo.compareTo(afterBalanceUserTwo),
                 "Баланс чужого аккаунта не должен измениться");
     }
 
+    //todo: добавить тест с невалидным типом данных
     @Test
     public void depositWithStringAccountIdDoesNotChangeBalanceTest() {
-        BigDecimal before = getBalance(token, accountId);
-        deposit(token, "da", new BigDecimal("10"))
-                .then().assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
-        assertEquals(0, before.compareTo(getBalance(token, accountId)));
+        new AddDepositMoneyRequester(authUser(), ResponseSpecs.requestReturnsBadRequest(ERROR_KEY, INVALID_MESSAGE_TYPE_NULL))
+                .post(new DepositRequest("sd", MAX_AMOUNT));
+
+        assertEquals(0, beforeBalance.compareTo(getAccountBalance()));
     }
 
     @Test
