@@ -1,11 +1,9 @@
 package tests;
 
 import generators.RandomData;
-import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import models.*;
-import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,17 +23,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.stream.Stream;
 
-import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DepositTest extends BaseTest {
     private static final String INVALID_MESSAGE = "Invalid account or amount";
     private static final String INVALID_MESSAGE_TYPE_NULL = "Invalid field types: accountId must be integer, amount must be number";
     private static final String INVALID_MESSAGE_LIMIT_5000 = "Deposit amount exceeds the 5000 limit";
-    private static final String ERROR_KEY = "message";
+    private static final String ERROR_KEY_MESSAGE = "message";
+    private static final String ERROR_KEY = "error";
+    private static final String ERROR_MESSAGE = "Bad Request";
     private static final BigDecimal MAX_AMOUNT = new BigDecimal("5000.00");
     private static final BigDecimal MIN_AMOUNT = new BigDecimal("0.01");
     private static final Long NOT_EXIST_ACCOUNT_ID = 999_999_999L;
+
     private UserRequest createUser;
     private BigDecimal beforeBalance;
     private Long accountId;
@@ -62,8 +62,18 @@ public class DepositTest extends BaseTest {
                 .post(new DepositRequest(accountId, amount));
     }
 
-    private String userName;
-    private String token;
+    private String depositBody(String accountIdJson, String amountJson) {
+        return """
+                {
+                  "accountId": %s,
+                  "amount": %s
+                }
+                """.formatted(accountIdJson, amountJson);
+    }
+
+    private void depositRaw(String rawBody, ResponseSpecification response) {
+        new AddDepositMoneyRequester(authUser(), response).postRaw(rawBody);
+    }
 
     @BeforeEach
     public void setUp() {
@@ -112,7 +122,7 @@ public class DepositTest extends BaseTest {
     @MethodSource("amountInvalidData")
     public void depositInvalidBoundaryAmountDoesNotChangeBalanceTest(String amount, String errorValue) {
         BigDecimal deposit = new BigDecimal(amount);
-        addDeposit(ResponseSpecs.requestReturnsBadRequest(ERROR_KEY, errorValue), deposit);
+        addDeposit(ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, errorValue), deposit);
         assertEquals(0, beforeBalance.compareTo(getAccountBalance()),
                 "Баланс не должен меняться при невалидной сумме " + amount);
     }
@@ -131,7 +141,7 @@ public class DepositTest extends BaseTest {
 
     @Test
     public void depositWithNullAmountDoesNotChangeBalanceTest() {
-        addDeposit(ResponseSpecs.requestReturnsBadRequest(ERROR_KEY, INVALID_MESSAGE_TYPE_NULL), null);
+        addDeposit(ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, INVALID_MESSAGE_TYPE_NULL), null);
         assertEquals(0, beforeBalance.compareTo(getAccountBalance()));
     }
 
@@ -192,69 +202,89 @@ public class DepositTest extends BaseTest {
                 "Баланс чужого аккаунта не должен измениться");
     }
 
-    //todo: добавить тест с невалидным типом данных
-    @Test
-    public void depositWithStringAccountIdDoesNotChangeBalanceTest() {
-        new AddDepositMoneyRequester(authUser(), ResponseSpecs.requestReturnsBadRequest(ERROR_KEY, INVALID_MESSAGE_TYPE_NULL))
-                .post(new DepositRequest("sd", MAX_AMOUNT));
+    // ---------- NEGATIVE: невалидный тип accountId ----------
 
-        assertEquals(0, beforeBalance.compareTo(getAccountBalance()));
+    public static Stream<Arguments> invalidAccountIdBodies() {
+        return Stream.of(
+                Arguments.of("\"abc\""),
+                Arguments.of("null"),
+                Arguments.of("[1, 2]"),
+                Arguments.of("{\"x\": 1}")
+        );
     }
 
-    @Test
-    public void depositWithNullAccountIdDoesNotChangeBalanceTest() {
-        BigDecimal before = getBalance(token, accountId);
-        deposit(token, null, new BigDecimal("10"))
-                .then().assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
-        assertEquals(0, before.compareTo(getBalance(token, accountId)));
+    @ParameterizedTest
+    @MethodSource("invalidAccountIdBodies")
+    public void depositWithInvalidAccountIdTypeDoesNotChangeBalanceTest(String accountIdJson) {
+        new AddDepositMoneyRequester(authUser(),
+                ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, INVALID_MESSAGE_TYPE_NULL))
+                .postRaw(depositBody(accountIdJson, MIN_AMOUNT.toString()));
+
+        assertEquals(0, beforeBalance.compareTo(getAccountBalance()),
+                "Баланс не должен измениться при невалидном accountId: " + accountIdJson);
+    }
+
+// ---------- NEGATIVE: невалидный тип amount ----------
+
+    public static Stream<Arguments> invalidAmountBodies() {
+        return Stream.of(
+                Arguments.of("\"0.01\""),         // строка
+                Arguments.of("\"abc\""),          // строка, не число
+                Arguments.of("[0.01]"),           // массив
+                Arguments.of("{\"x\": 0.01}")     // объект
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidAmountBodies")
+    public void depositWithInvalidAmountTypeDoesNotChangeBalanceTest(String amountJson) {
+        depositRaw(depositBody(accountId.toString(), amountJson),
+                ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, INVALID_MESSAGE_TYPE_NULL)
+        );
+
+        assertEquals(0, beforeBalance.compareTo(getAccountBalance()),
+                "Баланс не должен измениться при невалидном amount: " + amountJson);
     }
 
     // ---------- NEGATIVE: auth / body ----------
 
     @Test
     public void depositWithoutTokenTest() {
-        deposit(null, accountId, new BigDecimal("10"))
-                .then().assertThat().statusCode(HttpStatus.SC_UNAUTHORIZED);
+        new AddDepositMoneyRequester(RequestSpecs.invalidTokenSpec(null),
+                ResponseSpecs.requestReturnsUnauthorizedRequest())
+                .post(new DepositRequest(accountId, MAX_AMOUNT));
     }
 
     @Test
     public void depositWithFakeTokenTest() {
         String fake = "Basic " + Base64.getEncoder()
                 .encodeToString("wrong:wrong".getBytes(StandardCharsets.UTF_8));
-        deposit(fake, accountId, new BigDecimal("10"))
-                .then().assertThat().statusCode(HttpStatus.SC_UNAUTHORIZED);
+        new AddDepositMoneyRequester(RequestSpecs.invalidTokenSpec(fake),
+                ResponseSpecs.requestReturnsUnauthorizedRequest())
+                .post(new DepositRequest(accountId, MAX_AMOUNT));
+
     }
 
     @Test
     public void depositWithoutBodyTest() {
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", token)
-                .post(BASE_URL + API_V1 + "/accounts/deposit")
-                .then().assertThat().statusCode(HttpStatus.SC_BAD_REQUEST);
+        new AddDepositMoneyRequester(authUser(),
+                ResponseSpecs.requestReturnsBadRequest(ERROR_KEY, ERROR_MESSAGE))
+                .postNoBody();
     }
 
     @Test
     public void depositWithExtraFieldsTest() {
         // лишние поля должны игнорироваться, запрос валиден и баланс растёт
-        BigDecimal before = getBalance(token, accountId);
+        String body = """
+                {
+                    "accountId": %d,
+                        "amount": %s,
+                        "hack": "yes"
+                }
+                """.formatted(accountId, MAX_AMOUNT);
+        depositRaw(body, ResponseSpecs.requestReturnsOK());
 
-        given()
-                .contentType(ContentType.JSON)
-                .accept(ContentType.JSON)
-                .header("Authorization", token)
-                .body("""
-                        {
-                          "accountId": %d,
-                          "amount": 10,
-                          "hack": "yes"
-                        }
-                        """.formatted(accountId))
-                .post(BASE_URL + API_V1 + "/accounts/deposit")
-                .then().assertThat().statusCode(HttpStatus.SC_OK);
-
-        assertEquals(0, before.add(new BigDecimal("10"))
-                .compareTo(getBalance(token, accountId)));
+        assertEquals(0, beforeBalance.add(MAX_AMOUNT).compareTo(getAccountBalance()),
+                "Баланс должен увеличиться ровно на " + MAX_AMOUNT);
     }
 }

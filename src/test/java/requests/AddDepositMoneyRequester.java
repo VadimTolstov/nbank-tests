@@ -12,14 +12,29 @@ public class AddDepositMoneyRequester extends Request implements Postable<Deposi
         super(requestSpecification, responseSpecification);
     }
 
+    private ValidatableResponse send(Object body) {
+        RequestSpecification specification = given().spec(requestSpecification);
+        if (body != null) {
+            specification.body(body);
+        }
+        return specification.post("/api/v1/accounts/deposit")
+                .then()
+                .spec(responseSpecification);
+    }
+
     @Override
     public ValidatableResponse post(DepositRequest model) {
-        return given()
-                .spec(requestSpecification)
-                .body(model)
-                .post("/api/v1/accounts/deposit")
-                .then()
-                .assertThat()
-                .spec(responseSpecification);
+        return send(model);
+    }
+
+
+    // сырое тело — как строка, без сериализации через Jackson
+    public void postRaw(String rawBody) {
+        send(rawBody);
+    }
+
+    // PUT без body
+    public void postNoBody() {
+        send(null);
     }
 }
