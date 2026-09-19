@@ -34,6 +34,8 @@ public class DepositTest extends BaseTest {
     private static final BigDecimal MAX_AMOUNT = new BigDecimal("5000.00");
     private static final BigDecimal MIN_AMOUNT = new BigDecimal("0.01");
     private static final Long NOT_EXIST_ACCOUNT_ID = 999_999_999L;
+    private static final String TEST_MESSAGE_BALANCE_NOT_CHANGED = "Баланс не должен меняться ";
+    private static final String TEST_MESSAGE_BALANCE_CHANGED = "Баланс должен увеличиться ровно на ";
 
     private UserRequest oneUser;
     private BigDecimal beforeBalanceOneUser;
@@ -95,6 +97,10 @@ public class DepositTest extends BaseTest {
                 .extract().as(CustomerAccount.class);
     }
 
+    private void assertBalanceUnchanged(UserRequest user, BigDecimal before, String msg) {
+        assertEquals(0, before.compareTo(balanceOf(user)), msg);
+    }
+
     @BeforeEach
     public void setUp() {
         oneUser = UserRequest.builder()
@@ -115,8 +121,7 @@ public class DepositTest extends BaseTest {
     public void depositValidBoundaryAmountChangesBalanceTest(String amount) {
         BigDecimal deposit = new BigDecimal(amount);
         addDeposit(oneUser, ResponseSpecs.requestReturnsOK(), accountIdOneUser, deposit);
-        assertEquals(0, beforeBalanceOneUser.add(deposit).compareTo(balanceOf(oneUser)),
-                "Баланс должен увеличиться ровно на " + amount);
+        assertBalanceUnchanged(oneUser, beforeBalanceOneUser.add(deposit), TEST_MESSAGE_BALANCE_CHANGED + amount);
     }
 
 
@@ -137,8 +142,7 @@ public class DepositTest extends BaseTest {
                 ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, errorValue),
                 accountIdOneUser,
                 deposit);
-        assertEquals(0, beforeBalanceOneUser.compareTo(balanceOf(oneUser)),
-                "Баланс не должен меняться при невалидной сумме " + amount);
+        assertBalanceUnchanged(oneUser, beforeBalanceOneUser, TEST_MESSAGE_BALANCE_NOT_CHANGED + "при невалидном amount: " + amount);
     }
 
     // ---------- POSITIVE: накопление ----------
@@ -147,8 +151,10 @@ public class DepositTest extends BaseTest {
     public void depositSequentiallyAccumulatesBalanceTest() {
         addDeposit(oneUser, ResponseSpecs.requestReturnsOK(), accountIdOneUser, MAX_AMOUNT);
         addDeposit(oneUser, ResponseSpecs.requestReturnsOK(), accountIdOneUser, MIN_AMOUNT);
-        assertEquals(0, beforeBalanceOneUser.add(MAX_AMOUNT).add(MIN_AMOUNT)
-                .compareTo(balanceOf(oneUser)));
+        assertBalanceUnchanged(oneUser,
+                beforeBalanceOneUser.add(MAX_AMOUNT).add(MIN_AMOUNT),
+                TEST_MESSAGE_BALANCE_CHANGED + MAX_AMOUNT.add(MIN_AMOUNT));
+
     }
 
     // ---------- NEGATIVE: невалидные типы / аккаунт ----------
@@ -158,8 +164,7 @@ public class DepositTest extends BaseTest {
         new AddDepositMoneyRequester(authUser(oneUser), ResponseSpecs.requestReturnsForbidden())
                 .post(new DepositRequest(NOT_EXIST_ACCOUNT_ID, MAX_AMOUNT));
 
-        assertEquals(0, beforeBalanceOneUser.compareTo(balanceOf(oneUser)),
-                "Баланс нашего аккаунта не должен измениться");
+        assertBalanceUnchanged(oneUser, beforeBalanceOneUser, TEST_MESSAGE_BALANCE_NOT_CHANGED);
     }
 
     @Test
@@ -180,10 +185,8 @@ public class DepositTest extends BaseTest {
                 .post(new DepositRequest(accountIdUserTwo, MAX_AMOUNT));
         // получаем актуальный баланс второго пользователя
 
-        assertEquals(0, beforeBalanceOneUser.compareTo(balanceOf(oneUser)),
-                "Наш баланс не должен измениться");
-        assertEquals(0, balanceUserTwo.compareTo(balanceOf(twoUser)),
-                "Баланс чужого аккаунта не должен измениться");
+        assertBalanceUnchanged(oneUser, beforeBalanceOneUser, TEST_MESSAGE_BALANCE_NOT_CHANGED);
+        assertBalanceUnchanged(twoUser, balanceUserTwo, TEST_MESSAGE_BALANCE_NOT_CHANGED + "у чужого аккаунта");
     }
 
     // ---------- NEGATIVE: невалидный тип accountId ----------
@@ -204,8 +207,7 @@ public class DepositTest extends BaseTest {
                 ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, INVALID_MESSAGE_TYPE_NULL)
         );
 
-        assertEquals(0, beforeBalanceOneUser.compareTo(balanceOf(oneUser)),
-                "Баланс не должен измениться при невалидном accountId: " + accountIdJson);
+        assertBalanceUnchanged(oneUser, beforeBalanceOneUser, TEST_MESSAGE_BALANCE_NOT_CHANGED + "при невалидном accountId:" + accountIdJson);
     }
 
 // ---------- NEGATIVE: невалидный тип amount ----------
@@ -226,9 +228,7 @@ public class DepositTest extends BaseTest {
         depositRaw(oneUser, depositBody(accountIdOneUser.toString(), amountJson),
                 ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, INVALID_MESSAGE_TYPE_NULL)
         );
-
-        assertEquals(0, beforeBalanceOneUser.compareTo(balanceOf(oneUser)),
-                "Баланс не должен измениться при невалидном amount: " + amountJson);
+        assertBalanceUnchanged(oneUser, beforeBalanceOneUser, TEST_MESSAGE_BALANCE_NOT_CHANGED + "при невалидном amount: " + amountJson);
     }
 
     // ---------- NEGATIVE: auth / body ----------
@@ -271,8 +271,6 @@ public class DepositTest extends BaseTest {
                 }
                 """.formatted(accountIdOneUser, MAX_AMOUNT);
         depositRaw(oneUser, body, ResponseSpecs.requestReturnsOK());
-
-        assertEquals(0, beforeBalanceOneUser.add(MAX_AMOUNT).compareTo(balanceOf(oneUser)),
-                "Баланс должен увеличиться ровно на " + MAX_AMOUNT);
+        assertBalanceUnchanged(oneUser, beforeBalanceOneUser.add(MAX_AMOUNT), TEST_MESSAGE_BALANCE_CHANGED + MAX_AMOUNT);
     }
 }
