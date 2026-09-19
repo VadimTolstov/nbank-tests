@@ -181,8 +181,10 @@ public class DepositTest extends BaseTest {
         // получаем баланс второго пользователя
         BigDecimal balanceUserTwo = balanceOf(twoUser);
         // депозит от первого пользователя на депозит второго пользователя
-        new AddDepositMoneyRequester(authUser(oneUser), ResponseSpecs.requestReturnsForbidden())
-                .post(new DepositRequest(accountIdUserTwo, MAX_AMOUNT));
+        addDeposit(authUser(oneUser),
+                ResponseSpecs.requestReturnsForbidden(),
+                accountIdUserTwo,
+                MAX_AMOUNT);
         // получаем актуальный баланс второго пользователя
 
         assertBalanceUnchanged(oneUser, beforeBalanceOneUser, TEST_MESSAGE_BALANCE_NOT_CHANGED);
