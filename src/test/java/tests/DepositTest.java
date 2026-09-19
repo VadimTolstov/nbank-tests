@@ -50,27 +50,22 @@ public class DepositTest extends BaseTest {
                 .as(GetCustomerAccountsResponse.class);
     }
 
-    private Long getAccountId(UserRequest user) {
-        return accountsOf(user).stream()
-                .mapToLong(CustomerAccount::getId).findFirst().getAsLong();
-    }
-
     private BigDecimal balanceOf(UserRequest user) {
         return accountsOf(user).stream()
                 .map(CustomerAccount::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private void addDeposit(UserRequest user, ResponseSpecification responseSpecification, BigDecimal amount) {
-        addDeposit(user, authUser(user), responseSpecification, amount);
+    private void addDeposit(UserRequest user, ResponseSpecification responseSpecification, Long accountId, BigDecimal amount) {
+        addDeposit(authUser(user), responseSpecification, accountId, amount);
     }
 
-    private void addDeposit(UserRequest user,
-                            RequestSpecification authRequestSpecification,
+    private void addDeposit(RequestSpecification authRequestSpecification,
                             ResponseSpecification responseSpecification,
+                            Long accountId,
                             BigDecimal amount) {
         new AddDepositMoneyRequester(authRequestSpecification, responseSpecification)
-                .post(new DepositRequest(getAccountId(user), amount));
+                .post(new DepositRequest(accountId, amount));
     }
 
     private String depositBody(String accountIdJson, String amountJson) {
@@ -94,9 +89,10 @@ public class DepositTest extends BaseTest {
                 .as(CreateUserResponse.class);
     }
 
-    private void createAccount(UserRequest user) {
-        new CreateAccountRequester(authUser(user), ResponseSpecs.entityWasCreated())
-                .post(null);
+    private CustomerAccount createAccount(UserRequest user) {
+        return new CreateAccountRequester(authUser(user), ResponseSpecs.entityWasCreated())
+                .post(null)
+                .extract().as(CustomerAccount.class);
     }
 
     @BeforeEach
@@ -108,12 +104,9 @@ public class DepositTest extends BaseTest {
                 .build();
 
         createUser(oneUser);
-        createAccount(oneUser);
-
+        accountIdOneUser = createAccount(oneUser).getId();
         beforeBalanceOneUser = balanceOf(oneUser);
-        accountIdOneUser = getAccountId(oneUser);
     }
-
 
     // ---------- POSITIVE:  ----------
 
@@ -121,7 +114,7 @@ public class DepositTest extends BaseTest {
     @ValueSource(strings = {"0.01", "0.02", "4999.99", "5000"})
     public void depositValidBoundaryAmountChangesBalanceTest(String amount) {
         BigDecimal deposit = new BigDecimal(amount);
-        addDeposit(oneUser, ResponseSpecs.requestReturnsOK(), deposit);
+        addDeposit(oneUser, ResponseSpecs.requestReturnsOK(), accountIdOneUser, deposit);
         assertEquals(0, beforeBalanceOneUser.add(deposit).compareTo(balanceOf(oneUser)),
                 "Баланс должен увеличиться ровно на " + amount);
     }
@@ -140,7 +133,10 @@ public class DepositTest extends BaseTest {
     @MethodSource("amountInvalidData")
     public void depositInvalidBoundaryAmountDoesNotChangeBalanceTest(String amount, String errorValue) {
         BigDecimal deposit = new BigDecimal(amount);
-        addDeposit(oneUser, ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, errorValue), deposit);
+        addDeposit(oneUser,
+                ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, errorValue),
+                accountIdOneUser,
+                deposit);
         assertEquals(0, beforeBalanceOneUser.compareTo(balanceOf(oneUser)),
                 "Баланс не должен меняться при невалидной сумме " + amount);
     }
@@ -149,8 +145,8 @@ public class DepositTest extends BaseTest {
 
     @Test
     public void depositSequentiallyAccumulatesBalanceTest() {
-        addDeposit(oneUser, ResponseSpecs.requestReturnsOK(), MAX_AMOUNT);
-        addDeposit(oneUser, ResponseSpecs.requestReturnsOK(), MIN_AMOUNT);
+        addDeposit(oneUser, ResponseSpecs.requestReturnsOK(), accountIdOneUser, MAX_AMOUNT);
+        addDeposit(oneUser, ResponseSpecs.requestReturnsOK(), accountIdOneUser, MIN_AMOUNT);
         assertEquals(0, beforeBalanceOneUser.add(MAX_AMOUNT).add(MIN_AMOUNT)
                 .compareTo(balanceOf(oneUser)));
     }
@@ -175,12 +171,10 @@ public class DepositTest extends BaseTest {
                 .build();
 
         createUser(twoUser);
-        createAccount(twoUser);
+        // получаем id депозита второго пользователя
+        Long accountIdUserTwo = createAccount(twoUser).getId();
         // получаем баланс второго пользователя
         BigDecimal balanceUserTwo = balanceOf(twoUser);
-        // получаем id депозита второго пользователя
-        Long accountIdUserTwo = getAccountId(twoUser);
-
         // депозит от первого пользователя на депозит второго пользователя
         new AddDepositMoneyRequester(authUser(oneUser), ResponseSpecs.requestReturnsForbidden())
                 .post(new DepositRequest(accountIdUserTwo, MAX_AMOUNT));
@@ -241,16 +235,22 @@ public class DepositTest extends BaseTest {
 
     @Test
     public void depositWithoutTokenTest() {
-        addDeposit(oneUser, RequestSpecs.invalidTokenSpec(null),
-                ResponseSpecs.requestReturnsUnauthorizedRequest(), MAX_AMOUNT);
+        addDeposit(RequestSpecs.invalidTokenSpec(null),
+                ResponseSpecs.requestReturnsUnauthorizedRequest(),
+                accountIdOneUser,
+                MAX_AMOUNT
+        );
     }
 
     @Test
     public void depositWithFakeTokenTest() {
         String fake = "Basic " + Base64.getEncoder()
                 .encodeToString("wrong:wrong".getBytes(StandardCharsets.UTF_8));
-        addDeposit(oneUser, RequestSpecs.invalidTokenSpec(fake),
-                ResponseSpecs.requestReturnsUnauthorizedRequest(), MAX_AMOUNT);
+        addDeposit(RequestSpecs.invalidTokenSpec(fake),
+                ResponseSpecs.requestReturnsUnauthorizedRequest(),
+                accountIdOneUser,
+                MAX_AMOUNT
+        );
     }
 
     @Test
