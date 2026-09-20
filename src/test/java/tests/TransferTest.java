@@ -141,7 +141,7 @@ public class TransferTest extends BaseTest {
 
 
     /**
-     * #3 Перевод 0.02 себе при балансе 0.03
+     * #3 Перевод 0.02 не себе при балансе 0.03
      */
     @Test
     public void transferFractionalToSelfTest() {
@@ -169,32 +169,50 @@ public class TransferTest extends BaseTest {
 
         assertEquals(0, senderBefore.subtract(new BigDecimal("0.02"))
                         .compareTo(getBalance(firsUser, senderAccountIdFirstUser)),
-                "С отправителя списалось 0.02, осталось 0.01");
+                "С отправителя должно списаться 0.02, должно остаться 0.01");
         assertEquals(0, receiverBefore.add(new BigDecimal("0.02"))
                         .compareTo(getBalance(secondUser, accountIdSecondUser)),
-                "Получателю зачислилось 0.02");
+                "Получателю должно зачислиться 0.02");
     }
-//
-//
-//
-//    /**
-//     * #5 Перевод 3222 не себе при балансе 23263
-//     */
-//    @Test
-//    public void transferPartToForeignTest() {
-//        fillBalance(senderAccountId, token, new BigDecimal("23263"));
-//
-//        BigDecimal senderBefore = getBalance2(token, senderAccountId);
-//        BigDecimal receiverBefore = getBalance2(foreignToken, foreignAccountId);
-//
-//        transfer3(token, senderAccountId, foreignAccountId, new BigDecimal("3222"))
-//                .then().assertThat().statusCode(HttpStatus.SC_OK);
-//
-//        assertEquals(0, senderBefore.subtract(new BigDecimal("3222"))
-//                .compareTo(getBalance2(token, senderAccountId)));
-//        assertEquals(0, receiverBefore.add(new BigDecimal("3222"))
-//                .compareTo(getBalance2(foreignToken, foreignAccountId)));
-//    }
+
+
+    /**
+     * Последовательный перевод двух сумм A→B
+     */
+    @Test
+    public void transferPartToForeignTest() {
+        BigDecimal deposit = MAX_AMOUNT.multiply(BigDecimal.TEN);
+        fillBalance(firsUser, senderAccountIdFirstUser, deposit);
+        UserRequest secondUser = UserRequest.builder()
+                .username(RandomData.getUsername())
+                .password(RandomData.getPassword())
+                .role(UserRole.USER)
+                .build();
+
+        createUser(secondUser);
+        Long accountIdSecondUser = createAccount(secondUser).getId();
+
+        BigDecimal senderBefore;
+        BigDecimal receiverBefore;
+        for (int i = 1; i <= 2; i++) {
+            senderBefore = getBalance(firsUser, senderAccountIdFirstUser);
+            receiverBefore = getBalance(secondUser, accountIdSecondUser);
+            transfer(firsUser,
+                    ResponseSpecs.requestReturnsOK(),
+                    new TransferRequest(senderAccountIdFirstUser,
+                            accountIdSecondUser,
+                            MAX_AMOUNT
+                    )
+            );
+
+            assertEquals(0, senderBefore.subtract(MAX_AMOUNT)
+                            .compareTo(getBalance(firsUser, senderAccountIdFirstUser)),
+                    "Итерация " + i + ": С отправителя должно списаться " + MAX_AMOUNT );
+            assertEquals(0, receiverBefore.add(MAX_AMOUNT)
+                            .compareTo(getBalance(secondUser, accountIdSecondUser)),
+                    "Итерация " + i + ": Получателю должно зачислиться "+ MAX_AMOUNT );
+        }
+    }
 //
 //    /**
 //     * #6 Баланс не меняется при переводе на тот же счёт
