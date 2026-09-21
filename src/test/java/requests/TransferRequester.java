@@ -26,14 +26,4 @@ public class TransferRequester extends Request implements Postable<TransferReque
     public ValidatableResponse post(TransferRequest model) {
         return send(model);
     }
-
-    // сырое тело — как строка, без сериализации через Jackson
-    public void putRaw(String rawBody) {
-        send(rawBody);
-    }
-
-    // PUT без body
-    public void putNoBody() {
-        send(null);
-    }
 }

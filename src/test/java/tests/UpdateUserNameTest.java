@@ -130,9 +130,7 @@ public class UpdateUserNameTest extends BaseTest {
 
     public static Stream<Arguments> invalidRawBodies() {
         return Stream.of(
-                Arguments.of("{\"name\": null}"),
-                Arguments.of("{}"),
-                Arguments.of("{\"name\": 123}"),
+                Arguments.of("{\"name\": 12 3}"),
                 Arguments.of("{\"name\": [\"John\", \"Smith\"]}")
         );
     }

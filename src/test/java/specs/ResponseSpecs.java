@@ -42,4 +42,11 @@ public class ResponseSpecs {
                 .expectStatusCode(HttpStatus.SC_FORBIDDEN)
                 .build();
     }
+
+    public static ResponseSpecification requestReturnsForbidden(String errorKey, String errorValue) {
+        return defaultResponseBuilder()
+                .expectStatusCode(HttpStatus.SC_FORBIDDEN)
+                .expectBody(errorKey, Matchers.equalTo(errorValue))
+                .build();
+    }
 }
