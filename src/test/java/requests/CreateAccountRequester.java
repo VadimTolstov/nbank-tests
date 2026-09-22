@@ -21,4 +21,8 @@ public class CreateAccountRequester extends Request implements Postable<UserRequ
                 .assertThat()
                 .spec(responseSpecification);
     }
+
+    public ValidatableResponse post() {
+        return post(null);
+    }
 }

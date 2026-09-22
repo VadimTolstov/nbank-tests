@@ -3,11 +3,7 @@ package tests;
 import generators.RandomData;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.UserRequest;
-import models.CreateUserResponse;
-import models.GetUserProfileResponse;
-import models.UpdateUserNameRequest;
-import models.UserRole;
+import models.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,13 +20,7 @@ import java.util.stream.Stream;
 
 public class UpdateUserNameTest extends BaseTest {
 
-    private static final String INVALID_NAME_ERROR = "Name must contain two words with letters only";
-    private static final String ERROR_KEY_NAME = "message";
-    private static final String ERROR_KEY = "error";
-    private static final String INVALID_ERROR = "Bad Request";
-
     private UserRequest createUser;
-
 
     private RequestSpecification authUser() {
         return RequestSpecs.authAsUser(createUser.getUsername(), createUser.getPassword());
@@ -117,7 +107,7 @@ public class UpdateUserNameTest extends BaseTest {
     @ParameterizedTest
     @MethodSource("invalidNames")
     public void updateNameWithInvalidValueTest(String name) {
-        updateProfileName(name, ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_NAME, INVALID_NAME_ERROR));
+        updateProfileName(name, ResponseSpecs.nameIsInvalid());
 
         GetUserProfileResponse profile = fetchProfile();
 
@@ -127,7 +117,6 @@ public class UpdateUserNameTest extends BaseTest {
     }
 
     // ---------- negatives: bad body ----------
-
     public static Stream<Arguments> invalidRawBodies() {
         return Stream.of(
                 Arguments.of("{\"name\": 12 3}"),
@@ -138,7 +127,7 @@ public class UpdateUserNameTest extends BaseTest {
     @ParameterizedTest
     @MethodSource("invalidRawBodies")
     public void updateNameWithInvalidBodyTest(String rawBody) {
-        updateProfileRaw(rawBody, ResponseSpecs.requestReturnsBadRequest(ERROR_KEY, INVALID_ERROR));
+        updateProfileRaw(rawBody, ResponseSpecs.requestIsMalformed());
 
         GetUserProfileResponse profile = fetchProfile();
 
@@ -149,7 +138,7 @@ public class UpdateUserNameTest extends BaseTest {
 
     @Test
     public void updateNameWithoutBodyTest() {
-        updateProfileNoBody(ResponseSpecs.requestReturnsBadRequest(ERROR_KEY, INVALID_ERROR));
+        updateProfileNoBody(ResponseSpecs.requestIsMalformed());
 
         GetUserProfileResponse profile = fetchProfile();
 
@@ -159,19 +148,17 @@ public class UpdateUserNameTest extends BaseTest {
     }
 
     // ---------- negatives: auth ----------
-
-    @Test
-    public void updateNameWithoutTokenTest() {
-        new UpdateUserNameRequester(RequestSpecs.unauthSpec(),
-                ResponseSpecs.requestReturnsUnauthorizedRequest())
-                .put(new UpdateUserNameRequest(RandomData.getUsername()));
+    public static Stream<Arguments> invalidAuthSpecs() {
+        return Stream.of(
+                Arguments.of(RequestSpecs.invalidTokenSpec(null), "без токена"),
+                Arguments.of(RequestSpecs.invalidTokenSpec(RandomData.getFakeToken()), "поддельный токен")
+        );
     }
 
-    @Test
-    public void updateNameWithFakeTokenTest() {
-        String fake = RandomData.getFakeToken();
-
-        new UpdateUserNameRequester(RequestSpecs.invalidTokenSpec(fake),
+    @ParameterizedTest
+    @MethodSource("invalidAuthSpecs")
+    public void updateNameWithInvalidAuthDoesNotTokenTest(RequestSpecification invalidSpec, String caseName) {
+        new UpdateUserNameRequester(invalidSpec,
                 ResponseSpecs.requestReturnsUnauthorizedRequest())
                 .put(new UpdateUserNameRequest(RandomData.getUsername()));
     }

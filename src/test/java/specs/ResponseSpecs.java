@@ -6,10 +6,18 @@ import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
 
 public class ResponseSpecs {
-    private ResponseSpecs() {}
+    private ResponseSpecs() {
+    }
 
     private static ResponseSpecBuilder defaultResponseBuilder() {
         return new ResponseSpecBuilder();
+    }
+
+    private static ResponseSpecification withBodyError(int status, String errorKey, String errorValue) {
+        return defaultResponseBuilder()
+                .expectStatusCode(status)
+                .expectBody(errorKey, Matchers.equalTo(errorValue))
+                .build();
     }
 
     public static ResponseSpecification entityWasCreated() {
@@ -25,11 +33,9 @@ public class ResponseSpecs {
     }
 
     public static ResponseSpecification requestReturnsBadRequest(String errorKey, String errorValue) {
-        return defaultResponseBuilder()
-                .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
-                .expectBody(errorKey, Matchers.equalTo(errorValue))
-                .build();
+        return withBodyError(HttpStatus.SC_BAD_REQUEST, errorKey, errorValue);
     }
+
 
     public static ResponseSpecification requestReturnsUnauthorizedRequest() {
         return defaultResponseBuilder()
@@ -37,16 +43,35 @@ public class ResponseSpecs {
                 .build();
     }
 
-    public static ResponseSpecification requestReturnsForbidden() {
-        return defaultResponseBuilder()
-                .expectStatusCode(HttpStatus.SC_FORBIDDEN)
-                .build();
+    public static ResponseSpecification nameIsInvalid() {
+        return requestReturnsBadRequest(ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME);
     }
 
-    public static ResponseSpecification requestReturnsForbidden(String errorKey, String errorValue) {
-        return defaultResponseBuilder()
-                .expectStatusCode(HttpStatus.SC_FORBIDDEN)
-                .expectBody(errorKey, Matchers.equalTo(errorValue))
-                .build();
+    public static ResponseSpecification requestIsMalformed() {
+        return requestReturnsBadRequest(ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST);
+    }
+
+    public static ResponseSpecification requestReturnsForbidden() {
+        return withBodyError(HttpStatus.SC_FORBIDDEN, ApiErrors.KEY_MESSAGE, ApiErrors.Auth.UNAUTHORIZED_ACCOUNT);
+    }
+
+    public static ResponseSpecification fieldTypesAreInvalid() {
+        return requestReturnsBadRequest(ApiErrors.KEY_MESSAGE, ApiErrors.Deposit.INVALID_TYPES);
+    }
+
+    public static ResponseSpecification amountOrAccountIsInvalid() {
+        return requestReturnsBadRequest(ApiErrors.KEY_MESSAGE, ApiErrors.Deposit.INVALID_AMOUNT);
+    }
+
+    public static ResponseSpecification depositLimitExceeded() {
+        return requestReturnsBadRequest(ApiErrors.KEY_MESSAGE, ApiErrors.Deposit.LIMIT_5000);
+    }
+
+    public static ResponseSpecification transferLimitExceeded() {
+        return requestReturnsBadRequest(ApiErrors.KEY_MESSAGE, ApiErrors.Transfer.LIMIT_10000);
+    }
+
+    public static ResponseSpecification transferIsInvalid() {
+        return requestReturnsBadRequest(ApiErrors.KEY_MESSAGE, ApiErrors.Transfer.INVALID);
     }
 }

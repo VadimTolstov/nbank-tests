@@ -3,14 +3,14 @@ package tests;
 import generators.RandomData;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.*;
+import models.TransferRequest;
+import models.UserRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import requests.*;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
@@ -18,111 +18,13 @@ import java.math.BigDecimal;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static specs.ApiLimits.DEPOSIT_MAX;
 
 public class TransferTest extends BaseTest {
-
-    private static final BigDecimal MAX_AMOUNT = new BigDecimal("5000.00");
-    private static final String INVALID_MESSAGE_LIMIT_10000 = "Transfer amount cannot exceed 10000";
-    private static final String INVALID_MESSAGE_TRANSFER = "Invalid transfer: insufficient funds or invalid accounts";
-    private static final String ERROR_KEY_MESSAGE = "message";
-    private static final String UNAUTHORIZED_MESSAGE = "Unauthorized access to account";
-    private static final Long NOT_EXIST_ACCOUNT_ID = 999_999_999L;
-
-    // ---------- state ----------
 
     private UserRequest firstUser;
     private Long senderAccountIdFirstUser;
 
-    // ---------- records / value objects ----------
-
-    private record UserWithAccount(UserRequest user, Long accountId) {
-    }
-
-    // ---------- base helpers ----------
-
-    private RequestSpecification authUser(UserRequest user) {
-        return RequestSpecs.authAsUser(user.getUsername(), user.getPassword());
-    }
-
-    private GetCustomerAccountsResponse accountsOf(UserRequest user) {
-        return new GetCustomerAccountsRequester(authUser(user), ResponseSpecs.requestReturnsOK())
-                .get()
-                .extract()
-                .as(GetCustomerAccountsResponse.class);
-    }
-
-    private BigDecimal getBalance(UserRequest user, Long accountId) {
-        return accountsOf(user).stream()
-                .filter(a -> a.getId().equals(accountId))
-                .map(CustomerAccount::getBalance)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private void createUser(UserRequest user) {
-        new AdminCreateUserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
-                .post(user)
-                .extract()
-                .as(CreateUserResponse.class);
-    }
-
-    private CustomerAccount createAccount(UserRequest user) {
-        return new CreateAccountRequester(authUser(user), ResponseSpecs.entityWasCreated())
-                .post(null)
-                .extract()
-                .as(CustomerAccount.class);
-    }
-
-    private UserRequest freshUser() {
-        return UserRequest.builder()
-                .username(RandomData.getUsername())
-                .password(RandomData.getPassword())
-                .role(UserRole.USER)
-                .build();
-    }
-
-    private UserWithAccount freshUserWithAccount() {
-        UserRequest user = freshUser();
-        createUser(user);
-        return new UserWithAccount(user, createAccount(user).getId());
-    }
-
-    // ---------- deposit / transfer ----------
-
-    private void addDeposit(RequestSpecification spec,
-                            ResponseSpecification response,
-                            Long accountId,
-                            BigDecimal amount) {
-        new AddDepositMoneyRequester(spec, response)
-                .post(new DepositRequest(accountId, amount));
-    }
-
-    private void addDeposit(UserRequest user,
-                            ResponseSpecification response,
-                            Long accountId,
-                            BigDecimal amount) {
-        addDeposit(authUser(user), response, accountId, amount);
-    }
-
-    private void fillBalance(UserRequest user, Long accountId, BigDecimal total) {
-        BigDecimal left = total;
-        while (left.signum() > 0) {
-            BigDecimal part = left.min(MAX_AMOUNT);
-            addDeposit(user, ResponseSpecs.requestReturnsOK(), accountId, part);
-            left = left.subtract(part);
-        }
-    }
-
-    private void transfer(RequestSpecification spec,
-                          ResponseSpecification response,
-                          TransferRequest request) {
-        new TransferRequester(spec, response).post(request);
-    }
-
-    private void transfer(UserRequest user,
-                          ResponseSpecification response,
-                          TransferRequest request) {
-        transfer(authUser(user), response, request);
-    }
 
     // ---------- asserts ----------
 
@@ -200,14 +102,14 @@ public class TransferTest extends BaseTest {
      */
     @Test
     public void transferSequentiallySamePairTest() {
-        BigDecimal deposit = MAX_AMOUNT.multiply(BigDecimal.TEN);
+        BigDecimal deposit = DEPOSIT_MAX.multiply(BigDecimal.TEN);
         fillBalance(firstUser, senderAccountIdFirstUser, deposit);
 
         UserWithAccount second = freshUserWithAccount();
 
         for (int i = 1; i <= 2; i++) {
             assertSuccessfulTransfer(firstUser, senderAccountIdFirstUser,
-                    second.user(), second.accountId(), MAX_AMOUNT);
+                    second.user(), second.accountId(), DEPOSIT_MAX);
         }
     }
 
@@ -216,13 +118,13 @@ public class TransferTest extends BaseTest {
      */
     @Test
     public void transferToSameAccountKeepsBalanceTest() {
-        fillBalance(firstUser, senderAccountIdFirstUser, MAX_AMOUNT);
+        fillBalance(firstUser, senderAccountIdFirstUser, DEPOSIT_MAX);
 
         BigDecimal before = getBalance(firstUser, senderAccountIdFirstUser);
 
         transfer(firstUser, ResponseSpecs.requestReturnsOK(),
                 new TransferRequest(senderAccountIdFirstUser,
-                        senderAccountIdFirstUser, MAX_AMOUNT));
+                        senderAccountIdFirstUser, DEPOSIT_MAX));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, before,
                 "Баланс не должен меняться при переводе на тот же счёт");
@@ -233,7 +135,7 @@ public class TransferTest extends BaseTest {
      */
     @Test
     public void transferSequentiallyBetweenAccountsTest() {
-        fillBalance(firstUser, senderAccountIdFirstUser, MAX_AMOUNT);
+        fillBalance(firstUser, senderAccountIdFirstUser, DEPOSIT_MAX);
 
         UserWithAccount second = freshUserWithAccount();
         UserWithAccount third = freshUserWithAccount();
@@ -244,37 +146,37 @@ public class TransferTest extends BaseTest {
 
         // A -> B
         transfer(firstUser, ResponseSpecs.requestReturnsOK(),
-                new TransferRequest(senderAccountIdFirstUser, second.accountId(), MAX_AMOUNT));
+                new TransferRequest(senderAccountIdFirstUser, second.accountId(), DEPOSIT_MAX));
 
         // B -> C
         transfer(second.user(), ResponseSpecs.requestReturnsOK(),
-                new TransferRequest(second.accountId(), third.accountId(), MAX_AMOUNT));
+                new TransferRequest(second.accountId(), third.accountId(), DEPOSIT_MAX));
 
-        assertEquals(0, aBefore.subtract(MAX_AMOUNT)
+        assertEquals(0, aBefore.subtract(DEPOSIT_MAX)
                         .compareTo(getBalance(firstUser, senderAccountIdFirstUser)),
-                "A потерял " + MAX_AMOUNT);
+                "A потерял " + DEPOSIT_MAX);
         assertEquals(0, bBefore.compareTo(getBalance(second.user(), second.accountId())),
-                "B в итоге не изменился (получил и отдал " + MAX_AMOUNT + ")");
-        assertEquals(0, cBefore.add(MAX_AMOUNT)
+                "B в итоге не изменился (получил и отдал " + DEPOSIT_MAX + ")");
+        assertEquals(0, cBefore.add(DEPOSIT_MAX)
                         .compareTo(getBalance(third.user(), third.accountId())),
-                "C получил " + MAX_AMOUNT);
+                "C получил " + DEPOSIT_MAX);
     }
 
     // ---------- NEGATIVE: границы ----------
 
     public static Stream<Arguments> transferInvalidData() {
         return Stream.of(
-                Arguments.of("10000.01", INVALID_MESSAGE_LIMIT_10000),
-                Arguments.of("0.00", INVALID_MESSAGE_TRANSFER),
-                Arguments.of("-0.01", INVALID_MESSAGE_TRANSFER)
+                Arguments.of("10000.01", ResponseSpecs.transferLimitExceeded()),
+                Arguments.of("0.00", ResponseSpecs.transferIsInvalid()),
+                Arguments.of("-0.01", ResponseSpecs.transferIsInvalid())
         );
     }
 
     @ParameterizedTest
     @MethodSource("transferInvalidData")
-    public void transferInvalidBoundaryAmountDoesNotChangeBalancesTest(String amount, String errorMessage) {
+    public void transferInvalidBoundaryAmountDoesNotChangeBalancesTest(String amount, ResponseSpecification responseSpecs) {
         BigDecimal invalidAmount = new BigDecimal(amount);
-        fillBalance(firstUser, senderAccountIdFirstUser, MAX_AMOUNT);
+        fillBalance(firstUser, senderAccountIdFirstUser, DEPOSIT_MAX);
 
         Long selfAccountIdFirstUser = createAccount(firstUser).getId();
 
@@ -282,7 +184,7 @@ public class TransferTest extends BaseTest {
         BigDecimal receiverBefore = getBalance(firstUser, selfAccountIdFirstUser);
 
         transfer(firstUser,
-                ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, errorMessage),
+                responseSpecs,
                 new TransferRequest(senderAccountIdFirstUser, selfAccountIdFirstUser, invalidAmount));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, senderBefore,
@@ -298,7 +200,7 @@ public class TransferTest extends BaseTest {
      */
     @Test
     public void transferInsufficientFundsToForeignTest() {
-        fillBalance(firstUser, senderAccountIdFirstUser, MAX_AMOUNT);
+        fillBalance(firstUser, senderAccountIdFirstUser, DEPOSIT_MAX);
 
         UserWithAccount second = freshUserWithAccount();
 
@@ -306,10 +208,10 @@ public class TransferTest extends BaseTest {
         BigDecimal receiverBefore = getBalance(second.user(), second.accountId());
 
         transfer(firstUser,
-                ResponseSpecs.requestReturnsBadRequest(ERROR_KEY_MESSAGE, INVALID_MESSAGE_TRANSFER),
+                ResponseSpecs.transferIsInvalid(),
                 new TransferRequest(senderAccountIdFirstUser,
                         second.accountId(),
-                        MAX_AMOUNT.multiply(BigDecimal.TWO)));
+                        DEPOSIT_MAX.multiply(BigDecimal.TWO)));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, senderBefore,
                 "Баланс отправителя не должен измениться");
@@ -325,14 +227,14 @@ public class TransferTest extends BaseTest {
     @Test
     public void transferFromForeignAccountDoesNotChangeBalancesTest() {
         UserWithAccount second = freshUserWithAccount();
-        fillBalance(second.user(), second.accountId(), MAX_AMOUNT);
+        fillBalance(second.user(), second.accountId(), DEPOSIT_MAX);
 
         BigDecimal ourBefore = getBalance(firstUser, senderAccountIdFirstUser);
         BigDecimal foreignBefore = getBalance(second.user(), second.accountId());
 
         transfer(firstUser,
-                ResponseSpecs.requestReturnsForbidden(ERROR_KEY_MESSAGE, UNAUTHORIZED_MESSAGE),
-                new TransferRequest(second.accountId(), senderAccountIdFirstUser, MAX_AMOUNT));
+                ResponseSpecs.requestReturnsForbidden(),
+                new TransferRequest(second.accountId(), senderAccountIdFirstUser, DEPOSIT_MAX));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, ourBefore,
                 "Баланс нашего счёта не должен измениться");
@@ -345,13 +247,13 @@ public class TransferTest extends BaseTest {
      */
     @Test
     public void transferFromNonExistentAccountDoesNotChangeBalancesTest() {
-        fillBalance(firstUser, senderAccountIdFirstUser, MAX_AMOUNT);
+        fillBalance(firstUser, senderAccountIdFirstUser, DEPOSIT_MAX);
 
         BigDecimal before = getBalance(firstUser, senderAccountIdFirstUser);
 
         transfer(firstUser,
-                ResponseSpecs.requestReturnsForbidden(ERROR_KEY_MESSAGE, UNAUTHORIZED_MESSAGE),
-                new TransferRequest(NOT_EXIST_ACCOUNT_ID, senderAccountIdFirstUser, MAX_AMOUNT));
+                ResponseSpecs.requestReturnsForbidden(),
+                new TransferRequest(NOT_EXIST_ACCOUNT_ID, senderAccountIdFirstUser, DEPOSIT_MAX));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, before,
                 "Баланс не должен измениться при переводе с несуществующего счёта");
@@ -368,16 +270,15 @@ public class TransferTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("invalidAuthSpecs")
-    public void transferWithInvalidAuthDoesNotChangeBalancesTest(RequestSpecification invalidSpec,
-                                                                 String caseName) {
-        fillBalance(firstUser, senderAccountIdFirstUser, MAX_AMOUNT);
+    public void transferWithInvalidAuthDoesNotChangeBalancesTest(RequestSpecification invalidSpec, String caseName) {
+        fillBalance(firstUser, senderAccountIdFirstUser, DEPOSIT_MAX);
         Long selfAccountIdFirstUser = createAccount(firstUser).getId();
 
         BigDecimal senderBefore = getBalance(firstUser, senderAccountIdFirstUser);
         BigDecimal receiverBefore = getBalance(firstUser, selfAccountIdFirstUser);
 
         transfer(invalidSpec, ResponseSpecs.requestReturnsUnauthorizedRequest(),
-                new TransferRequest(senderAccountIdFirstUser, selfAccountIdFirstUser, MAX_AMOUNT));
+                new TransferRequest(senderAccountIdFirstUser, selfAccountIdFirstUser, DEPOSIT_MAX));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, senderBefore,
                 caseName + ": с баланса отправителя не должно списаться");
