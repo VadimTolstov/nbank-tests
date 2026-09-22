@@ -1,8 +1,673 @@
-POST http://localhost:80/api/item
+#Не забываем выбрать окружения для корректной работы по уполчанию стоит 👉 Run with: No Environment
+### С твоего позволения не буду расписывать в тестах, что помима кода ответа надо проверить,
+### что состояние изменилось при положительных тестах и не изменилось при негативных тестах (имя поменялось, баланс при транзакции изменился
+### или при негативном кейсе не изменился баланс) через дополнительный запрос или БД.
+#Итерация 2:
+#1. Депозит денег пользователем
+#2. Перевод денег с одного аккаунта на другой
+#3. Изменение имени пользователя
+
+### 1. Получение токена админа
+# @name loginAdmin
+POST {{host}}{{apiV1}}auth/login
 Content-Type: application/json
 
 {
-  "id": 99,
-  "content": "new-element"
+  "username": "{{users.admin.username}}",
+  "password": "{{users.admin.password}}"
 }
-###
+
+> {%
+    client.global.set("tokenAdmin", response.headers.valueOf("Authorization"));
+    client.log("Сохранённый токен: " + response.headers.valueOf("Authorization"));
+%}
+
+
+### 2. Создание пользователя vadim
+POST {{host}}{{apiV1}}admin/users
+Content-Type: application/json
+Authorization: {{tokenAdmin}}
+
+{
+  "username": "{{users.user.username}}",
+  "password": "{{users.user.password}}",
+  "role": "USER"
+}
+
+
+### 3. Получение токена пользователя
+# @name login
+POST {{host}}{{apiV1}}auth/login
+Content-Type: application/json
+
+{
+  "username": "{{users.user.username}}",
+  "password": "{{users.user.password}}"
+}
+
+> {%
+    client.global.set("token", response.headers.valueOf("Authorization"));
+    client.log("Сохранённый токен: " + response.headers.valueOf("Authorization"));
+%}
+
+
+### 4. Создание аккаунта пользователю
+POST {{host}}{{apiV1}}accounts
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "customer": {
+    "username": "{{users.user.username}}",
+    "password": "{{users.user.password}}",
+    "role": "USER"
+  }
+}
+
+
+
+### Изменение имени пользователя
+
+### Позитивные
+### 1. С минимальным значением символов
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "I I"
+}
+
+### 2. Со средним значением символов
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John Smith"
+}
+
+### 3. Со средним значением символов кирилица
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "Самый Главный"
+}
+
+### 4. С максимальным значением
+### Какой максимум??????????
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "JohnJohnJohn SmithSmithSmith"
+}
+
+### Негативные
+### 1. Одно слово
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John"
+}
+
+### 2. Три слова
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John John John"
+}
+
+### 3. Два пробела между словами
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John  John"
+}
+
+### 4. Пробел перед словом
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": " John John"
+}
+
+### 5. Дефис между словами
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John-John"
+}
+
+### 6. Tab вместо пробела
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John\tSmith"
+}
+
+### 7. Слово и цифра
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John 1"
+}
+
+### 8. Одни пробелы
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "        "
+}
+
+### 9. Пустая строка
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": ""
+}
+
+### 10. Слово и пробел
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John  "
+}
+
+### 11. Цифра в имени
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John John1"
+}
+
+### 12. Спецсимвол в имени
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "John John%"
+}
+
+### 13. Массив вместо строки
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": [
+    "John",
+    "Smith"
+  ]
+}
+
+### 14. Цифры вмето текста
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": 123
+}
+
+### 15. null в параметре name
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": null
+}
+
+### 16. Запрос без тела
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+
+### 17. Запрос c пустым телом
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: {{token}}
+
+{}
+
+### 18. Запрос без токеном
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+
+{
+  "name": "John John"
+}
+
+
+### 19. Запрос с поддельным токеном
+PUT {{host}}{{apiV1}}customer/profile
+Content-Type: application/json
+Authorization: Basic d3Jvbmc6d3Jvbmc=
+
+{
+  "name": "John A"
+}
+
+
+### Депозит пользователя
+
+### Позитивные
+### 1. Создать депозит
+POST {{host}}{{apiV1}}accounts
+Content-Type: application/json
+Authorization: {{token}}
+
+### 2. Внести максимальное значение на депозит 5000
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 5000
+}
+
+### 3. Внести деньги на депозит 4999.99
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 4999.99
+}
+
+### 4. Внести минимальное значение на депозит 0.01
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 0.01
+}
+
+
+### 5. Внести деньги на депозит 0.02
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 0.02
+}
+
+
+### Негативные
+### 1. Внести деньги на депозит 5000.01
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 5000.01
+}
+
+### 2. Внести деньги на депозит 0
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 0
+}
+
+### 3. Внести деньги на депозит -0.01
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": -0.01
+}
+
+
+### 4. Внести деньги на несуществующий депозит
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 999999999,
+  "amount": 10
+}
+
+### 5. Внести деньги на депозит в чужой аккаунт
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 34,
+  "amount": 10
+}
+
+### 6. Внести деньги на депозит без токена
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+
+{
+  "accountId": 4,
+  "amount": 10
+}
+
+### 7. null в параметре  amount
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": null
+}
+
+
+### 8. Строка в параметре  amount
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": "sda"
+}
+
+### 9. Строка в параметре  accountId
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": "da",
+  "amount": 10
+}
+
+### 10. null в параметре  accountId
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": null,
+  "amount": 10
+}
+
+
+### 11. Лишние поля в теле запроса
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "accountId": 4,
+  "amount": 10,
+  "hack": "yes"
+}
+
+### 12. Запрос с поддельным токеном
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: Basic d3Jvbmc6d3Jvbmc=
+
+{
+  "accountId": 4,
+  "amount": 10
+}
+
+### 13. Запрос без тела
+POST {{host}}{{apiV1}}accounts/deposit
+Content-Type: application/json
+Authorization: {{token}}
+
+
+
+### Переводы
+
+### Позитивные
+### 1. Перевод максимальной суммы 10000  при балансе 10000
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 10000
+}
+### 2. Перевод суммы 9999.99 себе при балансе 9999.99
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 35,
+  "amount": 9999.99
+}
+
+### 3. Перевод суммы 0.02 себе при балансе 0.03
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 35,
+  "amount": 2
+}
+
+### 4. Перевод минимальной суммы 0.01  при балансе 0.01
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 0.01
+}
+
+### 5. Перевод  суммы 3222 не себе при балансе 23263
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 3222
+}
+
+### 6. Баланс не изменяется при переводе денег с со счета на тот же счет
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 4,
+  "amount": 10000
+}
+
+### 7. Последовательный перевод нескольких сумм
+### Переводим  с акаунта А на акаунт B
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 10000
+}
+
+### Сразу еще раз с акаунта А на акаунт B
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 5670
+}
+
+### 8. Последовательный перевод одной суммы денег с разных аккаунтов
+### Переводим деньги с акаунта А на акаунт В
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 10000
+}
+### После получения денег от акаунта А, акаунт B переводит полученные деньги акаунту С
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 34,
+  "receiverAccountId": 38,
+  "amount": 10000
+}
+
+
+### Негативыне
+### 1. Перевод суммы 0
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 0
+}
+
+### 2. Перевод суммы 10000.01
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": 10000.01
+}
+
+### 3. Перевод суммы -0.01
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 34,
+  "amount": -0.01
+}
+
+### 4. Перевод суммы 8000 не себе при балансе 5000
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 36,
+  "amount": 8000
+}
+
+### 5. Перевод суммы 8000  себе при балансе 5000
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 35,
+  "amount": 8000
+}
+
+### 6. Перевод денег с чужого счета на свой
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 36,
+  "receiverAccountId": 4,
+  "amount": 8000
+}
+
+### 7. Перевод денег с несуществующего  счета на свой
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "senderAccountId": 999999,
+  "receiverAccountId": 4,
+  "amount": 8000
+}
+
+### 8. Перевод денег с поддельным токеном
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+Authorization: Basic d3Jvbmc6d3Jvbmc=
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 36,
+  "amount": 8000
+}
+
+
+### 9. Перевод денег без токена
+POST {{host}}{{apiV1}}accounts/transfer
+Content-Type: application/json
+
+{
+  "senderAccountId": 4,
+  "receiverAccountId": 36,
+  "amount": 8000
+}
