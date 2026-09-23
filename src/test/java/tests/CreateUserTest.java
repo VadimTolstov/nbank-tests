@@ -48,9 +48,8 @@ public class CreateUserTest extends BaseTest {
                 .build();
 
         new AdminCreateUserRequester(RequestSpecs.adminSpec(),
-                ResponseSpecs.requestReturnsBadRequest())
+                ResponseSpecs.requestReturnsBadRequest(errorKey, errorValue))
                 .post(userRequest);
-
             Assertions.assertNull(getUserByName(username));
     }
 }
