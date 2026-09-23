@@ -13,12 +13,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
+import utils.Repeat;
 
 import java.math.BigDecimal;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static api.ApiLimits.DEPOSIT_MAX;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static utils.Repeat.*;
 
 public class TransferTest extends BaseTest {
 
@@ -107,10 +109,10 @@ public class TransferTest extends BaseTest {
 
         UserWithAccount second = freshUserWithAccount();
 
-        for (int i = 1; i <= 2; i++) {
+        repeat(2, () -> {
             assertSuccessfulTransfer(firstUser, senderAccountIdFirstUser,
                     second.user(), second.accountId(), DEPOSIT_MAX);
-        }
+        });
     }
 
     /**
