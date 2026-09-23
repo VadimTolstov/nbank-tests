@@ -1,5 +1,6 @@
 package specs;
 
+import api.ApiErrors;
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.specification.ResponseSpecification;
 import org.apache.http.HttpStatus;

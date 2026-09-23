@@ -5,6 +5,7 @@ import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import models.*;
 import org.assertj.core.api.SoftAssertions;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import requests.*;
@@ -13,7 +14,7 @@ import specs.ResponseSpecs;
 
 import java.math.BigDecimal;
 
-import static specs.ApiLimits.DEPOSIT_MAX;
+import static api.ApiLimits.DEPOSIT_MAX;
 
 public abstract class BaseTest {
     protected static final Long NOT_EXIST_ACCOUNT_ID = 999_999_999L;
@@ -32,7 +33,6 @@ public abstract class BaseTest {
 
     protected record UserWithAccount(UserRequest user, Long accountId) {
     }
-
 
     protected RequestSpecification authUser(UserRequest user) {
         return RequestSpecs.authAsUser(user.getUsername(), user.getPassword());
@@ -58,8 +58,37 @@ public abstract class BaseTest {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    protected void createUser(UserRequest user) {
-        new AdminCreateUserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
+    protected GetUsersResponse getUsers() {
+        return new GetUsersRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsOK())
+                .get()
+                .extract()
+                .as(GetUsersResponse.class);
+    }
+
+    protected CreateUserResponse getUserById(CreateUserResponse user) {
+        return getUsers().stream()
+                .filter(u -> u.getId().equals(user.getId()))
+                .findFirst()
+                .get();
+    }
+
+    protected @Nullable CreateUserResponse getUserByName(String name) {
+        return getUsers().stream()
+                .filter(u -> name.equals(u.getUsername()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    protected CustomerAccount getAccountById(CreateUserResponse user, Long accountId) {
+        return getUserById(user).getAccounts()
+                .stream()
+                .filter(a -> a.getId().equals(accountId))
+                .findFirst()
+                .get();
+    }
+
+    protected CreateUserResponse createUser(UserRequest user) {
+        return new AdminCreateUserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
                 .post(user)
                 .extract()
                 .as(CreateUserResponse.class);
@@ -87,17 +116,17 @@ public abstract class BaseTest {
     }
 
     protected void addDeposit(RequestSpecification spec,
-                            ResponseSpecification response,
-                            Long accountId,
-                            BigDecimal amount) {
+                              ResponseSpecification response,
+                              Long accountId,
+                              BigDecimal amount) {
         new AddDepositMoneyRequester(spec, response)
                 .post(new DepositRequest(accountId, amount));
     }
 
     protected void addDeposit(UserRequest user,
-                            ResponseSpecification response,
-                            Long accountId,
-                            BigDecimal amount) {
+                              ResponseSpecification response,
+                              Long accountId,
+                              BigDecimal amount) {
         addDeposit(authUser(user), response, accountId, amount);
     }
 
@@ -111,14 +140,14 @@ public abstract class BaseTest {
     }
 
     protected void transfer(RequestSpecification spec,
-                          ResponseSpecification response,
-                          TransferRequest request) {
+                            ResponseSpecification response,
+                            TransferRequest request) {
         new TransferRequester(spec, response).post(request);
     }
 
     protected void transfer(UserRequest user,
-                          ResponseSpecification response,
-                          TransferRequest request) {
+                            ResponseSpecification response,
+                            TransferRequest request) {
         transfer(authUser(user), response, request);
     }
 
@@ -133,5 +162,27 @@ public abstract class BaseTest {
 
     protected void depositRaw(UserRequest user, String rawBody, ResponseSpecification response) {
         new AddDepositMoneyRequester(authUser(user), response).postRaw(rawBody);
+    }
+
+    protected GetUserProfileResponse fetchProfile(UserRequest user) {
+        return new GetProfileRequester(authUser(user), ResponseSpecs.requestReturnsOK())
+                .get()
+                .extract()
+                .as(GetUserProfileResponse.class);
+    }
+
+    protected void updateProfileName(UserRequest user, String name, ResponseSpecification response) {
+        new UpdateUserNameRequester(authUser(user), response)
+                .put(new UpdateUserNameRequest(name));
+    }
+
+    protected void updateProfileRaw(UserRequest user, String rawBody, ResponseSpecification response) {
+        new UpdateUserNameRequester(authUser(user), response)
+                .putRaw(rawBody);
+    }
+
+    protected void updateProfileNoBody(UserRequest user, ResponseSpecification response) {
+        new UpdateUserNameRequester(authUser(user), response)
+                .putNoBody();
     }
 }

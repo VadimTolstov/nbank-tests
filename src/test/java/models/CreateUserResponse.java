@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class CreateUserResponse extends BaseModel {
-    private long id;
+    private Long id;
     private String username;
     private String password;
     private String name;

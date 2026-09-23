@@ -2,7 +2,6 @@ package tests;
 
 import generators.RandomData;
 import io.restassured.specification.RequestSpecification;
-import io.restassured.specification.ResponseSpecification;
 import models.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +10,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import requests.AdminCreateUserRequester;
-import requests.GetProfileRequester;
 import requests.UpdateUserNameRequester;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
@@ -21,33 +19,6 @@ import java.util.stream.Stream;
 public class UpdateUserNameTest extends BaseTest {
 
     private UserRequest createUser;
-
-    private RequestSpecification authUser() {
-        return RequestSpecs.authAsUser(createUser.getUsername(), createUser.getPassword());
-    }
-
-    private GetUserProfileResponse fetchProfile() {
-        return new GetProfileRequester(authUser(), ResponseSpecs.requestReturnsOK())
-                .get()
-                .extract()
-                .as(GetUserProfileResponse.class);
-    }
-
-    private void updateProfileName(String name, ResponseSpecification response) {
-        new UpdateUserNameRequester(authUser(), response)
-                .put(new UpdateUserNameRequest(name));
-    }
-
-    private void updateProfileRaw(String rawBody, ResponseSpecification response) {
-        new UpdateUserNameRequester(authUser(), response)
-                .putRaw(rawBody);
-    }
-
-    private void updateProfileNoBody(ResponseSpecification response) {
-        new UpdateUserNameRequester(authUser(), response)
-                .putNoBody();
-    }
-
 
     @BeforeEach
     public void setUp() {
@@ -74,9 +45,9 @@ public class UpdateUserNameTest extends BaseTest {
             "JohnJohnJohn SmithSmithSmith"
     })
     public void updateNameWithValidValueTest(String name) {
-        updateProfileName(name, ResponseSpecs.requestReturnsOK());
+        updateProfileName(createUser, name, ResponseSpecs.requestReturnsOK());
 
-        GetUserProfileResponse profile = fetchProfile();
+        GetUserProfileResponse profile = fetchProfile(createUser);
 
         softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
         softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());
@@ -107,9 +78,9 @@ public class UpdateUserNameTest extends BaseTest {
     @ParameterizedTest
     @MethodSource("invalidNames")
     public void updateNameWithInvalidValueTest(String name) {
-        updateProfileName(name, ResponseSpecs.nameIsInvalid());
+        updateProfileName(createUser, name, ResponseSpecs.nameIsInvalid());
 
-        GetUserProfileResponse profile = fetchProfile();
+        GetUserProfileResponse profile = fetchProfile(createUser);
 
         softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
         softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());
@@ -127,9 +98,9 @@ public class UpdateUserNameTest extends BaseTest {
     @ParameterizedTest
     @MethodSource("invalidRawBodies")
     public void updateNameWithInvalidBodyTest(String rawBody) {
-        updateProfileRaw(rawBody, ResponseSpecs.requestIsMalformed());
+        updateProfileRaw(createUser, rawBody, ResponseSpecs.requestIsMalformed());
 
-        GetUserProfileResponse profile = fetchProfile();
+        GetUserProfileResponse profile = fetchProfile(createUser);
 
         softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
         softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());
@@ -138,9 +109,9 @@ public class UpdateUserNameTest extends BaseTest {
 
     @Test
     public void updateNameWithoutBodyTest() {
-        updateProfileNoBody(ResponseSpecs.requestIsMalformed());
+        updateProfileNoBody(createUser, ResponseSpecs.requestIsMalformed());
 
-        GetUserProfileResponse profile = fetchProfile();
+        GetUserProfileResponse profile = fetchProfile(createUser);
 
         softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
         softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());

@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static specs.ApiLimits.DEPOSIT_MAX;
+import static api.ApiLimits.DEPOSIT_MAX;
 
 public class TransferTest extends BaseTest {
 

@@ -1,7 +1,6 @@
 package tests;
 
 import generators.RandomData;
-import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import models.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,10 +10,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import requests.AddDepositMoneyRequester;
-import requests.AdminCreateUserRequester;
-import requests.CreateAccountRequester;
-import requests.GetCustomerAccountsRequester;
-import specs.ApiLimits;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
@@ -22,7 +17,7 @@ import java.math.BigDecimal;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static specs.ApiLimits.*;
+import static api.ApiLimits.*;
 
 public class DepositTest extends BaseTest {
     private static final String TEST_MESSAGE_BALANCE_NOT_CHANGED = "Баланс не должен меняться ";
@@ -38,11 +33,7 @@ public class DepositTest extends BaseTest {
 
     @BeforeEach
     public void setUp() {
-        firstUser = UserRequest.builder()
-                .username(RandomData.getUsername())
-                .password(RandomData.getPassword())
-                .role(UserRole.USER)
-                .build();
+        firstUser =freshUser();
 
         createUser(firstUser);
         accountIdFirstUser = createAccount(firstUser).getId();
