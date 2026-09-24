@@ -9,14 +9,18 @@ import io.restassured.specification.RequestSpecification;
 import models.LoginUserRequest;
 import requests.LoginUserRequester;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class RequestSpecs {
+    private static Map<String, String> authHeaders = new HashMap<>(Map.of("admin", "Basic YWRtaW46YWRtaW4="));
+    private static final Config CFG = Config.getInstance();
+    private static final String AUTH_HEADER = "Authorization";
+
     private RequestSpecs() {
     }
 
-    private static final Config CFG = Config.getInstance();
-    private static final String AUTH_HEADER = "Authorization";
 
     private static RequestSpecBuilder defaultRequestBuilder() {
         return new RequestSpecBuilder()
@@ -33,7 +37,7 @@ public class RequestSpecs {
 
     public static RequestSpecification adminSpec() {
         return defaultRequestBuilder()
-                .addHeader(AUTH_HEADER, "Basic YWRtaW46YWRtaW4=")
+                .addHeader(AUTH_HEADER, authHeaders.get("admin"))
                 .build();
     }
 

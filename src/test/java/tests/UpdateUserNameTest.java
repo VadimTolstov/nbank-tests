@@ -18,11 +18,11 @@ import java.util.stream.Stream;
 
 public class UpdateUserNameTest extends BaseTest {
 
-    private UserRequest createUser;
+    private CreateUserRequest createUser;
 
     @BeforeEach
     public void setUp() {
-        createUser = UserRequest.builder()
+        createUser = CreateUserRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)

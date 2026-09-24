@@ -3,7 +3,7 @@ package tests;
 import generators.RandomData;
 import models.AdminCredentials;
 import models.LoginUserRequest;
-import models.UserRequest;
+import models.CreateUserRequest;
 import models.UserRole;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -27,17 +27,17 @@ public class LoginUserTest extends BaseTest {
 
     @Test
     public void userCanGenerateAuthTokenTest() {
-        UserRequest userRequest = UserRequest.builder()
+        CreateUserRequest createUserRequest = CreateUserRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)
                 .build();
 
-        createUser(userRequest);
+        createUser(createUserRequest);
 
         new LoginUserRequester(RequestSpecs.unauthSpec(),
                 ResponseSpecs.requestReturnsOK())
-                .post(LoginUserRequest.builder().username(userRequest.getUsername()).password(userRequest.getPassword()).build())
+                .post(LoginUserRequest.builder().username(createUserRequest.getUsername()).password(createUserRequest.getPassword()).build())
                 .header("Authorization", Matchers.notNullValue());
     }
 }

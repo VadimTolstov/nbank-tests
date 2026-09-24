@@ -1,7 +1,6 @@
 package tests;
 
-import generators.RandomData;
-import models.UserRequest;
+import models.CreateUserRequest;
 import models.CreateUserResponse;
 import models.UserRole;
 import org.junit.jupiter.api.Assertions;
@@ -18,12 +17,12 @@ import java.util.stream.Stream;
 public class CreateUserTest extends BaseTest {
     @Test
     public void adminCanCreateUserWithCorrectData() {
-        UserRequest userRequest = freshUser();
-        CreateUserResponse createUserResponse =  createUser(userRequest);
+        CreateUserRequest createUserRequest = freshUser();
+        CreateUserResponse createUserResponse =  createUser(createUserRequest);
         createUserResponse = getUserById(createUserResponse);
-        softly.assertThat(userRequest.getUsername()).isEqualTo(createUserResponse.getUsername());
-        softly.assertThat(userRequest.getPassword()).isNotEqualTo(createUserResponse.getPassword());
-        softly.assertThat(userRequest.getRole()).isEqualTo(createUserResponse.getRole());
+        softly.assertThat(createUserRequest.getUsername()).isEqualTo(createUserResponse.getUsername());
+        softly.assertThat(createUserRequest.getPassword()).isNotEqualTo(createUserResponse.getPassword());
+        softly.assertThat(createUserRequest.getRole()).isEqualTo(createUserResponse.getRole());
 
     }
 
@@ -41,7 +40,7 @@ public class CreateUserTest extends BaseTest {
     @MethodSource("userInvalidData")
     @ParameterizedTest
     public void adminCanNotCreateUserWithInvalidData(String username, String password, UserRole role, String errorKey, String errorValue) {
-        UserRequest userRequest = UserRequest.builder()
+        CreateUserRequest createUserRequest = CreateUserRequest.builder()
                 .username(username)
                 .password(password)
                 .role(role)
@@ -49,7 +48,7 @@ public class CreateUserTest extends BaseTest {
 
         new AdminCreateUserRequester(RequestSpecs.adminSpec(),
                 ResponseSpecs.requestReturnsBadRequest(errorKey, errorValue))
-                .post(userRequest);
+                .post(createUserRequest);
             Assertions.assertNull(getUserByName(username));
     }
 }

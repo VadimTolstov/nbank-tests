@@ -4,7 +4,7 @@ import generators.RandomData;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import models.TransferRequest;
-import models.UserRequest;
+import models.CreateUserRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -13,7 +13,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
-import utils.Repeat;
 
 import java.math.BigDecimal;
 import java.util.stream.Stream;
@@ -24,13 +23,13 @@ import static utils.Repeat.*;
 
 public class TransferTest extends BaseTest {
 
-    private UserRequest firstUser;
+    private CreateUserRequest firstUser;
     private Long senderAccountIdFirstUser;
 
 
     // ---------- asserts ----------
 
-    private void assertBalanceUnchanged(UserRequest user,
+    private void assertBalanceUnchanged(CreateUserRequest user,
                                         Long accountId,
                                         BigDecimal before,
                                         String message) {
@@ -41,9 +40,9 @@ public class TransferTest extends BaseTest {
      * Общий шаблон позитивного перевода:
      * снимаем before → делаем transfer → проверяем "списалось/зачислилось".
      */
-    private void assertSuccessfulTransfer(UserRequest sender,
+    private void assertSuccessfulTransfer(CreateUserRequest sender,
                                           Long senderAccountId,
-                                          UserRequest receiver,
+                                          CreateUserRequest receiver,
                                           Long receiverAccountId,
                                           BigDecimal amount) {
         BigDecimal senderBefore = getBalance(sender, senderAccountId);

@@ -31,27 +31,27 @@ public abstract class BaseTest {
         softly.assertAll();
     }
 
-    protected record UserWithAccount(UserRequest user, Long accountId) {
+    protected record UserWithAccount(CreateUserRequest user, Long accountId) {
     }
 
-    protected RequestSpecification authUser(UserRequest user) {
+    protected RequestSpecification authUser(CreateUserRequest user) {
         return RequestSpecs.authAsUser(user.getUsername(), user.getPassword());
     }
 
-    protected GetCustomerAccountsResponse accountsOf(UserRequest user) {
+    protected GetCustomerAccountsResponse accountsOf(CreateUserRequest user) {
         return new GetCustomerAccountsRequester(authUser(user), ResponseSpecs.requestReturnsOK())
                 .get()
                 .extract()
                 .as(GetCustomerAccountsResponse.class);
     }
 
-    protected BigDecimal balanceOf(UserRequest user) {
+    protected BigDecimal balanceOf(CreateUserRequest user) {
         return accountsOf(user).stream()
                 .map(CustomerAccount::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    protected BigDecimal getBalance(UserRequest user, Long accountId) {
+    protected BigDecimal getBalance(CreateUserRequest user, Long accountId) {
         return accountsOf(user).stream()
                 .filter(a -> a.getId().equals(accountId))
                 .map(CustomerAccount::getBalance)
@@ -87,22 +87,22 @@ public abstract class BaseTest {
                 .get();
     }
 
-    protected CreateUserResponse createUser(UserRequest user) {
+    protected CreateUserResponse createUser(CreateUserRequest user) {
         return new AdminCreateUserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
                 .post(user)
                 .extract()
                 .as(CreateUserResponse.class);
     }
 
-    protected CustomerAccount createAccount(UserRequest user) {
+    protected CustomerAccount createAccount(CreateUserRequest user) {
         return new CreateAccountRequester(authUser(user), ResponseSpecs.entityWasCreated())
                 .post()
                 .extract()
                 .as(CustomerAccount.class);
     }
 
-    protected UserRequest freshUser() {
-        return UserRequest.builder()
+    protected CreateUserRequest freshUser() {
+        return CreateUserRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)
@@ -110,7 +110,7 @@ public abstract class BaseTest {
     }
 
     protected UserWithAccount freshUserWithAccount() {
-        UserRequest user = freshUser();
+        CreateUserRequest user = freshUser();
         createUser(user);
         return new UserWithAccount(user, createAccount(user).getId());
     }
@@ -123,14 +123,14 @@ public abstract class BaseTest {
                 .post(new DepositRequest(accountId, amount));
     }
 
-    protected void addDeposit(UserRequest user,
+    protected void addDeposit(CreateUserRequest user,
                               ResponseSpecification response,
                               Long accountId,
                               BigDecimal amount) {
         addDeposit(authUser(user), response, accountId, amount);
     }
 
-    protected void fillBalance(UserRequest user, Long accountId, BigDecimal total) {
+    protected void fillBalance(CreateUserRequest user, Long accountId, BigDecimal total) {
         BigDecimal left = total;
         while (left.signum() > 0) {
             BigDecimal part = left.min(DEPOSIT_MAX);
@@ -145,7 +145,7 @@ public abstract class BaseTest {
         new TransferRequester(spec, response).post(request);
     }
 
-    protected void transfer(UserRequest user,
+    protected void transfer(CreateUserRequest user,
                             ResponseSpecification response,
                             TransferRequest request) {
         transfer(authUser(user), response, request);
@@ -160,28 +160,28 @@ public abstract class BaseTest {
                 """.formatted(accountIdJson, amountJson);
     }
 
-    protected void depositRaw(UserRequest user, String rawBody, ResponseSpecification response) {
+    protected void depositRaw(CreateUserRequest user, String rawBody, ResponseSpecification response) {
         new AddDepositMoneyRequester(authUser(user), response).postRaw(rawBody);
     }
 
-    protected GetUserProfileResponse fetchProfile(UserRequest user) {
+    protected GetUserProfileResponse fetchProfile(CreateUserRequest user) {
         return new GetProfileRequester(authUser(user), ResponseSpecs.requestReturnsOK())
                 .get()
                 .extract()
                 .as(GetUserProfileResponse.class);
     }
 
-    protected void updateProfileName(UserRequest user, String name, ResponseSpecification response) {
+    protected void updateProfileName(CreateUserRequest user, String name, ResponseSpecification response) {
         new UpdateUserNameRequester(authUser(user), response)
                 .put(new UpdateUserNameRequest(name));
     }
 
-    protected void updateProfileRaw(UserRequest user, String rawBody, ResponseSpecification response) {
+    protected void updateProfileRaw(CreateUserRequest user, String rawBody, ResponseSpecification response) {
         new UpdateUserNameRequester(authUser(user), response)
                 .putRaw(rawBody);
     }
 
-    protected void updateProfileNoBody(UserRequest user, ResponseSpecification response) {
+    protected void updateProfileNoBody(CreateUserRequest user, ResponseSpecification response) {
         new UpdateUserNameRequester(authUser(user), response)
                 .putNoBody();
     }

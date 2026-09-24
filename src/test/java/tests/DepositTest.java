@@ -23,11 +23,11 @@ public class DepositTest extends BaseTest {
     private static final String TEST_MESSAGE_BALANCE_NOT_CHANGED = "Баланс не должен меняться ";
     private static final String TEST_MESSAGE_BALANCE_CHANGED = "Баланс должен увеличиться ровно на ";
 
-    private UserRequest firstUser;
+    private CreateUserRequest firstUser;
     private BigDecimal beforeBalanceFirstUser;
     private Long accountIdFirstUser;
 
-    private void assertBalanceEquals(UserRequest user, BigDecimal before, String msg) {
+    private void assertBalanceEquals(CreateUserRequest user, BigDecimal before, String msg) {
         assertEquals(0, before.compareTo(balanceOf(user)), msg);
     }
 
@@ -91,7 +91,7 @@ public class DepositTest extends BaseTest {
 
     @Test
     public void depositToForeignAccountDoesNotAffectBalancesTest() {
-        UserRequest secondUser = UserRequest.builder()
+        CreateUserRequest secondUser = CreateUserRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)
