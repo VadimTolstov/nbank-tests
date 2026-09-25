@@ -2,7 +2,9 @@ package tests;
 
 import generators.RandomData;
 import io.restassured.specification.ResponseSpecification;
-import models.*;
+import models.rest.CreateUserJsonRequest;
+import models.rest.DepositJsonRequest;
+import models.rest.UserRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,11 +25,11 @@ public class DepositTest extends BaseTest {
     private static final String TEST_MESSAGE_BALANCE_NOT_CHANGED = "Баланс не должен меняться ";
     private static final String TEST_MESSAGE_BALANCE_CHANGED = "Баланс должен увеличиться ровно на ";
 
-    private CreateUserRequest firstUser;
+    private CreateUserJsonRequest firstUser;
     private BigDecimal beforeBalanceFirstUser;
     private Long accountIdFirstUser;
 
-    private void assertBalanceEquals(CreateUserRequest user, BigDecimal before, String msg) {
+    private void assertBalanceEquals(CreateUserJsonRequest user, BigDecimal before, String msg) {
         assertEquals(0, before.compareTo(balanceOf(user)), msg);
     }
 
@@ -84,14 +86,14 @@ public class DepositTest extends BaseTest {
     @Test
     public void depositToNonExistentAccountTest() {
         new AddDepositMoneyRequester(authUser(firstUser), ResponseSpecs.requestReturnsForbidden())
-                .post(new DepositRequest(NOT_EXIST_ACCOUNT_ID, DEPOSIT_MAX));
+                .post(new DepositJsonRequest(NOT_EXIST_ACCOUNT_ID, DEPOSIT_MAX));
 
         assertBalanceEquals(firstUser, beforeBalanceFirstUser, TEST_MESSAGE_BALANCE_NOT_CHANGED);
     }
 
     @Test
     public void depositToForeignAccountDoesNotAffectBalancesTest() {
-        CreateUserRequest secondUser = CreateUserRequest.builder()
+        CreateUserJsonRequest secondUser = CreateUserJsonRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)

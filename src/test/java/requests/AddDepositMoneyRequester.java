@@ -3,11 +3,11 @@ package requests;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.DepositRequest;
+import models.rest.DepositJsonRequest;
 
 import static io.restassured.RestAssured.given;
 
-public class AddDepositMoneyRequester extends Request implements Postable<DepositRequest> {
+public class AddDepositMoneyRequester extends Request implements Postable<DepositJsonRequest> {
     public AddDepositMoneyRequester(RequestSpecification requestSpecification, ResponseSpecification responseSpecification) {
         super(requestSpecification, responseSpecification);
     }
@@ -23,7 +23,7 @@ public class AddDepositMoneyRequester extends Request implements Postable<Deposi
     }
 
     @Override
-    public ValidatableResponse post(DepositRequest model) {
+    public ValidatableResponse post(DepositJsonRequest model) {
         return send(model);
     }
 

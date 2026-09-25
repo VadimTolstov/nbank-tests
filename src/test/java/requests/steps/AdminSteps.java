@@ -1,19 +1,19 @@
 package requests.steps;
 
 import generators.RandomModelGenerator;
-import models.CreateUserRequest;
-import models.CreateUserResponse;
+import models.rest.CreateUserJsonRequest;
+import models.rest.CreateUserJsonResponse;
 import requests.skelethon.Endpoint;
 import requests.skelethon.requesters.ValidatedCrudRequester;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
 
 public class AdminSteps {
-    public static CreateUserRequest createUser() {
-        CreateUserRequest userRequest =
-                RandomModelGenerator.generate(CreateUserRequest.class);
+    public static CreateUserJsonRequest createUser() {
+        CreateUserJsonRequest userRequest =
+                RandomModelGenerator.generate(CreateUserJsonRequest.class);
 
-        new ValidatedCrudRequester<CreateUserResponse>(
+        new ValidatedCrudRequester<CreateUserJsonResponse>(
                 RequestSpecs.adminSpec(),
                 Endpoint.ADMIN_USER,
                 ResponseSpecs.entityWasCreated())

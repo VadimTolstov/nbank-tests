@@ -2,7 +2,7 @@ package tests;
 
 import generators.RandomData;
 import io.restassured.specification.RequestSpecification;
-import models.*;
+import models.rest.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,11 +18,11 @@ import java.util.stream.Stream;
 
 public class UpdateUserNameTest extends BaseTest {
 
-    private CreateUserRequest createUser;
+    private CreateUserJsonRequest createUser;
 
     @BeforeEach
     public void setUp() {
-        createUser = CreateUserRequest.builder()
+        createUser = CreateUserJsonRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)
@@ -32,7 +32,7 @@ public class UpdateUserNameTest extends BaseTest {
                 ResponseSpecs.entityWasCreated())
                 .post(createUser)
                 .extract()
-                .as(CreateUserResponse.class);
+                .as(CreateUserJsonResponse.class);
     }
 
     // ---------- positives ----------

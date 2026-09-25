@@ -1,8 +1,8 @@
 package tests;
 
-import models.CreateUserResponse;
-import models.CustomerAccount;
-import models.CreateUserRequest;
+import models.rest.CreateUserJsonResponse;
+import models.rest.CustomerAccountJson;
+import models.rest.CreateUserJsonRequest;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -11,9 +11,9 @@ public class CreateAccountTest extends BaseTest {
 
     @Test
     public void userCanCreateAccountTest() {
-        CreateUserRequest createUserRequest = freshUser();
-        CreateUserResponse user = createUser(createUserRequest);
-        CustomerAccount account = createAccount(createUserRequest);
+        CreateUserJsonRequest createUserJsonRequest = freshUser();
+        CreateUserJsonResponse user = createUser(createUserJsonRequest);
+        CustomerAccountJson account = createAccount(createUserJsonRequest);
 
         softly.assertThat(account)
                 .usingRecursiveComparison()

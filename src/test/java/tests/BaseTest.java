@@ -3,7 +3,7 @@ package tests;
 import generators.RandomData;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.*;
+import models.rest.*;
 import org.assertj.core.api.SoftAssertions;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -31,55 +31,55 @@ public abstract class BaseTest {
         softly.assertAll();
     }
 
-    protected record UserWithAccount(CreateUserRequest user, Long accountId) {
+    protected record UserWithAccount(CreateUserJsonRequest user, Long accountId) {
     }
 
-    protected RequestSpecification authUser(CreateUserRequest user) {
+    protected RequestSpecification authUser(CreateUserJsonRequest user) {
         return RequestSpecs.authAsUser(user.getUsername(), user.getPassword());
     }
 
-    protected GetCustomerAccountsResponse accountsOf(CreateUserRequest user) {
+    protected GetCustomerAccountsResponse accountsOf(CreateUserJsonRequest user) {
         return new GetCustomerAccountsRequester(authUser(user), ResponseSpecs.requestReturnsOK())
                 .get()
                 .extract()
                 .as(GetCustomerAccountsResponse.class);
     }
 
-    protected BigDecimal balanceOf(CreateUserRequest user) {
+    protected BigDecimal balanceOf(CreateUserJsonRequest user) {
         return accountsOf(user).stream()
-                .map(CustomerAccount::getBalance)
+                .map(CustomerAccountJson::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    protected BigDecimal getBalance(CreateUserRequest user, Long accountId) {
+    protected BigDecimal getBalance(CreateUserJsonRequest user, Long accountId) {
         return accountsOf(user).stream()
                 .filter(a -> a.getId().equals(accountId))
-                .map(CustomerAccount::getBalance)
+                .map(CustomerAccountJson::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    protected GetUsersResponse getUsers() {
+    protected GetUsersJsonResponse getUsers() {
         return new GetUsersRequester(RequestSpecs.adminSpec(), ResponseSpecs.requestReturnsOK())
                 .get()
                 .extract()
-                .as(GetUsersResponse.class);
+                .as(GetUsersJsonResponse.class);
     }
 
-    protected CreateUserResponse getUserById(CreateUserResponse user) {
+    protected CreateUserJsonResponse getUserById(CreateUserJsonResponse user) {
         return getUsers().stream()
                 .filter(u -> u.getId().equals(user.getId()))
                 .findFirst()
                 .get();
     }
 
-    protected @Nullable CreateUserResponse getUserByName(String name) {
+    protected @Nullable CreateUserJsonResponse getUserByName(String name) {
         return getUsers().stream()
                 .filter(u -> name.equals(u.getUsername()))
                 .findFirst()
                 .orElse(null);
     }
 
-    protected CustomerAccount getAccountById(CreateUserResponse user, Long accountId) {
+    protected CustomerAccountJson getAccountById(CreateUserJsonResponse user, Long accountId) {
         return getUserById(user).getAccounts()
                 .stream()
                 .filter(a -> a.getId().equals(accountId))
@@ -87,22 +87,22 @@ public abstract class BaseTest {
                 .get();
     }
 
-    protected CreateUserResponse createUser(CreateUserRequest user) {
+    protected CreateUserJsonResponse createUser(CreateUserJsonRequest user) {
         return new AdminCreateUserRequester(RequestSpecs.adminSpec(), ResponseSpecs.entityWasCreated())
                 .post(user)
                 .extract()
-                .as(CreateUserResponse.class);
+                .as(CreateUserJsonResponse.class);
     }
 
-    protected CustomerAccount createAccount(CreateUserRequest user) {
+    protected CustomerAccountJson createAccount(CreateUserJsonRequest user) {
         return new CreateAccountRequester(authUser(user), ResponseSpecs.entityWasCreated())
                 .post()
                 .extract()
-                .as(CustomerAccount.class);
+                .as(CustomerAccountJson.class);
     }
 
-    protected CreateUserRequest freshUser() {
-        return CreateUserRequest.builder()
+    protected CreateUserJsonRequest freshUser() {
+        return CreateUserJsonRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)
@@ -110,7 +110,7 @@ public abstract class BaseTest {
     }
 
     protected UserWithAccount freshUserWithAccount() {
-        CreateUserRequest user = freshUser();
+        CreateUserJsonRequest user = freshUser();
         createUser(user);
         return new UserWithAccount(user, createAccount(user).getId());
     }
@@ -120,17 +120,17 @@ public abstract class BaseTest {
                               Long accountId,
                               BigDecimal amount) {
         new AddDepositMoneyRequester(spec, response)
-                .post(new DepositRequest(accountId, amount));
+                .post(new DepositJsonRequest(accountId, amount));
     }
 
-    protected void addDeposit(CreateUserRequest user,
+    protected void addDeposit(CreateUserJsonRequest user,
                               ResponseSpecification response,
                               Long accountId,
                               BigDecimal amount) {
         addDeposit(authUser(user), response, accountId, amount);
     }
 
-    protected void fillBalance(CreateUserRequest user, Long accountId, BigDecimal total) {
+    protected void fillBalance(CreateUserJsonRequest user, Long accountId, BigDecimal total) {
         BigDecimal left = total;
         while (left.signum() > 0) {
             BigDecimal part = left.min(DEPOSIT_MAX);
@@ -141,13 +141,13 @@ public abstract class BaseTest {
 
     protected void transfer(RequestSpecification spec,
                             ResponseSpecification response,
-                            TransferRequest request) {
+                            TransferJson request) {
         new TransferRequester(spec, response).post(request);
     }
 
-    protected void transfer(CreateUserRequest user,
+    protected void transfer(CreateUserJsonRequest user,
                             ResponseSpecification response,
-                            TransferRequest request) {
+                            TransferJson request) {
         transfer(authUser(user), response, request);
     }
 
@@ -160,28 +160,28 @@ public abstract class BaseTest {
                 """.formatted(accountIdJson, amountJson);
     }
 
-    protected void depositRaw(CreateUserRequest user, String rawBody, ResponseSpecification response) {
+    protected void depositRaw(CreateUserJsonRequest user, String rawBody, ResponseSpecification response) {
         new AddDepositMoneyRequester(authUser(user), response).postRaw(rawBody);
     }
 
-    protected GetUserProfileResponse fetchProfile(CreateUserRequest user) {
+    protected GetUserProfileResponse fetchProfile(CreateUserJsonRequest user) {
         return new GetProfileRequester(authUser(user), ResponseSpecs.requestReturnsOK())
                 .get()
                 .extract()
                 .as(GetUserProfileResponse.class);
     }
 
-    protected void updateProfileName(CreateUserRequest user, String name, ResponseSpecification response) {
+    protected void updateProfileName(CreateUserJsonRequest user, String name, ResponseSpecification response) {
         new UpdateUserNameRequester(authUser(user), response)
                 .put(new UpdateUserNameRequest(name));
     }
 
-    protected void updateProfileRaw(CreateUserRequest user, String rawBody, ResponseSpecification response) {
+    protected void updateProfileRaw(CreateUserJsonRequest user, String rawBody, ResponseSpecification response) {
         new UpdateUserNameRequester(authUser(user), response)
                 .putRaw(rawBody);
     }
 
-    protected void updateProfileNoBody(CreateUserRequest user, ResponseSpecification response) {
+    protected void updateProfileNoBody(CreateUserJsonRequest user, ResponseSpecification response) {
         new UpdateUserNameRequester(authUser(user), response)
                 .putNoBody();
     }

@@ -1,4 +1,4 @@
-package models;
+package models.rest;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class GetUserProfileResponse extends BaseModel {
-    private long id;
+public class LoginUserResponse extends BaseModel {
     private String username;
-    private String name;
-    private UserRole role;
+    private String role;
 }

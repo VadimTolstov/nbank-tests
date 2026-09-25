@@ -3,8 +3,8 @@ package tests;
 import generators.RandomData;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.TransferRequest;
-import models.CreateUserRequest;
+import models.rest.TransferJson;
+import models.rest.CreateUserJsonRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,13 +23,13 @@ import static utils.Repeat.*;
 
 public class TransferTest extends BaseTest {
 
-    private CreateUserRequest firstUser;
+    private CreateUserJsonRequest firstUser;
     private Long senderAccountIdFirstUser;
 
 
     // ---------- asserts ----------
 
-    private void assertBalanceUnchanged(CreateUserRequest user,
+    private void assertBalanceUnchanged(CreateUserJsonRequest user,
                                         Long accountId,
                                         BigDecimal before,
                                         String message) {
@@ -40,16 +40,16 @@ public class TransferTest extends BaseTest {
      * Общий шаблон позитивного перевода:
      * снимаем before → делаем transfer → проверяем "списалось/зачислилось".
      */
-    private void assertSuccessfulTransfer(CreateUserRequest sender,
+    private void assertSuccessfulTransfer(CreateUserJsonRequest sender,
                                           Long senderAccountId,
-                                          CreateUserRequest receiver,
+                                          CreateUserJsonRequest receiver,
                                           Long receiverAccountId,
                                           BigDecimal amount) {
         BigDecimal senderBefore = getBalance(sender, senderAccountId);
         BigDecimal receiverBefore = getBalance(receiver, receiverAccountId);
 
         transfer(sender, ResponseSpecs.requestReturnsOK(),
-                new TransferRequest(senderAccountId, receiverAccountId, amount));
+                new TransferJson(senderAccountId, receiverAccountId, amount));
 
         assertEquals(0, senderBefore.subtract(amount)
                         .compareTo(getBalance(sender, senderAccountId)),
@@ -124,7 +124,7 @@ public class TransferTest extends BaseTest {
         BigDecimal before = getBalance(firstUser, senderAccountIdFirstUser);
 
         transfer(firstUser, ResponseSpecs.requestReturnsOK(),
-                new TransferRequest(senderAccountIdFirstUser,
+                new TransferJson(senderAccountIdFirstUser,
                         senderAccountIdFirstUser, DEPOSIT_MAX));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, before,
@@ -147,11 +147,11 @@ public class TransferTest extends BaseTest {
 
         // A -> B
         transfer(firstUser, ResponseSpecs.requestReturnsOK(),
-                new TransferRequest(senderAccountIdFirstUser, second.accountId(), DEPOSIT_MAX));
+                new TransferJson(senderAccountIdFirstUser, second.accountId(), DEPOSIT_MAX));
 
         // B -> C
         transfer(second.user(), ResponseSpecs.requestReturnsOK(),
-                new TransferRequest(second.accountId(), third.accountId(), DEPOSIT_MAX));
+                new TransferJson(second.accountId(), third.accountId(), DEPOSIT_MAX));
 
         assertEquals(0, aBefore.subtract(DEPOSIT_MAX)
                         .compareTo(getBalance(firstUser, senderAccountIdFirstUser)),
@@ -186,7 +186,7 @@ public class TransferTest extends BaseTest {
 
         transfer(firstUser,
                 responseSpecs,
-                new TransferRequest(senderAccountIdFirstUser, selfAccountIdFirstUser, invalidAmount));
+                new TransferJson(senderAccountIdFirstUser, selfAccountIdFirstUser, invalidAmount));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, senderBefore,
                 "Баланс отправителя не должен измениться");
@@ -210,7 +210,7 @@ public class TransferTest extends BaseTest {
 
         transfer(firstUser,
                 ResponseSpecs.transferIsInvalid(),
-                new TransferRequest(senderAccountIdFirstUser,
+                new TransferJson(senderAccountIdFirstUser,
                         second.accountId(),
                         DEPOSIT_MAX.multiply(BigDecimal.TWO)));
 
@@ -235,7 +235,7 @@ public class TransferTest extends BaseTest {
 
         transfer(firstUser,
                 ResponseSpecs.requestReturnsForbidden(),
-                new TransferRequest(second.accountId(), senderAccountIdFirstUser, DEPOSIT_MAX));
+                new TransferJson(second.accountId(), senderAccountIdFirstUser, DEPOSIT_MAX));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, ourBefore,
                 "Баланс нашего счёта не должен измениться");
@@ -254,7 +254,7 @@ public class TransferTest extends BaseTest {
 
         transfer(firstUser,
                 ResponseSpecs.requestReturnsForbidden(),
-                new TransferRequest(NOT_EXIST_ACCOUNT_ID, senderAccountIdFirstUser, DEPOSIT_MAX));
+                new TransferJson(NOT_EXIST_ACCOUNT_ID, senderAccountIdFirstUser, DEPOSIT_MAX));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, before,
                 "Баланс не должен измениться при переводе с несуществующего счёта");
@@ -279,7 +279,7 @@ public class TransferTest extends BaseTest {
         BigDecimal receiverBefore = getBalance(firstUser, selfAccountIdFirstUser);
 
         transfer(invalidSpec, ResponseSpecs.requestReturnsUnauthorizedRequest(),
-                new TransferRequest(senderAccountIdFirstUser, selfAccountIdFirstUser, DEPOSIT_MAX));
+                new TransferJson(senderAccountIdFirstUser, selfAccountIdFirstUser, DEPOSIT_MAX));
 
         assertBalanceUnchanged(firstUser, senderAccountIdFirstUser, senderBefore,
                 caseName + ": с баланса отправителя не должно списаться");

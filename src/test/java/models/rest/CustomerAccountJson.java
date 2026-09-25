@@ -1,4 +1,4 @@
-package models;
+package models.rest;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,8 +11,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TransferRequest extends BaseModel {
-    private Long senderAccountId;
-    private Long receiverAccountId;
-    private BigDecimal amount;
+public class CustomerAccountJson extends BaseModel {
+    private Long id;
+    private String accountNumber;
+    private BigDecimal balance;
 }

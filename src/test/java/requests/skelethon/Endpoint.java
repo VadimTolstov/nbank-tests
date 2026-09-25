@@ -2,15 +2,15 @@ package requests.skelethon;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import models.*;
+import models.rest.*;
 
 @Getter
 @AllArgsConstructor
 public enum Endpoint {
     ADMIN_USER(
             "/admin/users",
-            CreateUserRequest.class,
-            CreateUserResponse.class
+            CreateUserJsonRequest.class,
+            CreateUserJsonResponse.class
     ),
 
     LOGIN(
@@ -22,7 +22,7 @@ public enum Endpoint {
     ACCOUNTS(
             "/accounts",
             BaseModel.class,
-            CustomerAccount.class
+            CustomerAccountJson.class
     );
 
 

@@ -1,4 +1,4 @@
-package models;
+package models.rest;
 
 public enum UserRole {
     USER,

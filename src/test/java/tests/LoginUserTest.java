@@ -1,10 +1,10 @@
 package tests;
 
 import generators.RandomData;
-import models.AdminCredentials;
-import models.LoginUserRequest;
-import models.CreateUserRequest;
-import models.UserRole;
+import models.rest.AdminCredentials;
+import models.rest.LoginUserRequest;
+import models.rest.CreateUserJsonRequest;
+import models.rest.UserRole;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import requests.LoginUserRequester;
@@ -27,17 +27,17 @@ public class LoginUserTest extends BaseTest {
 
     @Test
     public void userCanGenerateAuthTokenTest() {
-        CreateUserRequest createUserRequest = CreateUserRequest.builder()
+        CreateUserJsonRequest createUserJsonRequest = CreateUserJsonRequest.builder()
                 .username(RandomData.getUsername())
                 .password(RandomData.getPassword())
                 .role(UserRole.USER)
                 .build();
 
-        createUser(createUserRequest);
+        createUser(createUserJsonRequest);
 
         new LoginUserRequester(RequestSpecs.unauthSpec(),
                 ResponseSpecs.requestReturnsOK())
-                .post(LoginUserRequest.builder().username(createUserRequest.getUsername()).password(createUserRequest.getPassword()).build())
+                .post(LoginUserRequest.builder().username(createUserJsonRequest.getUsername()).password(createUserJsonRequest.getPassword()).build())
                 .header("Authorization", Matchers.notNullValue());
     }
 }

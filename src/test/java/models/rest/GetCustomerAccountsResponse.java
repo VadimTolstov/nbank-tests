@@ -1,4 +1,4 @@
-package models;
+package models.rest;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,5 +9,5 @@ import java.util.ArrayList;
 @NoArgsConstructor
 @Getter
 @ToString
-public class GetCustomerAccountsResponse extends ArrayList<CustomerAccount> {
+public class GetCustomerAccountsResponse extends ArrayList<CustomerAccountJson> {
 }

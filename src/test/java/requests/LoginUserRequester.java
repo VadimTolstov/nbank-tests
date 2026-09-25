@@ -3,7 +3,7 @@ package requests;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import models.LoginUserRequest;
+import models.rest.LoginUserRequest;
 
 import static io.restassured.RestAssured.given;
 

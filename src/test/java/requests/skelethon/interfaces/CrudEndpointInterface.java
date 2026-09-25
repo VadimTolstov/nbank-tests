@@ -1,6 +1,6 @@
 package requests.skelethon.interfaces;
 
-import models.BaseModel;
+import models.rest.BaseModel;
 
 public interface CrudEndpointInterface {
     Object post(BaseModel model);
