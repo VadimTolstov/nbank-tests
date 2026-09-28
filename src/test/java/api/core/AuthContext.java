@@ -49,7 +49,6 @@ public final class AuthContext {
             ThreadLocal.withInitial(HashMap::new);
 
     private AuthContext() {
-        // utility-класс, инстанцирование запрещено
     }
 
     /**

@@ -5,8 +5,8 @@ package api.endpoint;
  */
 public interface AccountsEndpoints {
 
-    String CREATE_ACCOUNT = "/accounts";
-    String COMPLETE_PENDING_TRANSACTIONS = CREATE_ACCOUNT + "/transfers/{id}/complete";
+    String CREATE_ACCOUNT = "accounts";
     String TRANSFER_MONEY = CREATE_ACCOUNT + "/transfers";
+    String COMPLETE_PENDING_TRANSACTIONS = TRANSFER_MONEY + "/{id}/complete";
     String DEPOSIT = CREATE_ACCOUNT + "/deposit";
 }

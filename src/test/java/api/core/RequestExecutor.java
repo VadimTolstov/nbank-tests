@@ -31,6 +31,10 @@ import java.util.function.Function;
  *         для нестандартных случаев: multipart, streaming, кастомные
  *         заголовки, PUT и прочее. Принимают лямбду от
  *         {@link RequestSpecification} к {@link Response}.</li>
+ *     <li><b>Работа с заголовками</b> {@link #executeRaw} /
+ *         {@link #postForResponse} / {@link #header} — когда тело
+ *         не главное, а нужно достать значение из заголовка
+ *         (например, токен авторизации при логине).</li>
  * </ul>
  *
  * <p><b>Про {@link RequestSpecification}.</b> Каждый вызов ожидает <em>свежую</em>
@@ -45,6 +49,8 @@ import java.util.function.Function;
  * @see ResponseSpecs
  */
 public interface RequestExecutor {
+
+    // ---------- escape hatch: типизированный ответ ----------
 
     /**
      * Выполняет произвольный запрос и десериализует тело ответа в {@code T}.
@@ -114,6 +120,88 @@ public interface RequestExecutor {
                              @NonNull ResponseSpecification respSpec,
                              @NonNull Function<RequestSpecification, Response> call) {
         call.apply(spec).then().spec(respSpec);
+    }
+
+    // ---------- escape hatch: сырой Response ----------
+
+    /**
+     * Выполняет запрос, валидирует ответ, но возвращает <em>сырой</em>
+     * {@link Response} без десериализации тела.
+     *
+     * <p>Использовать, когда важны заголовки (например, токен в
+     * {@code Authorization} при логине) или нужен доступ к статусу,
+     * cookies, времени ответа в обход типизированного API.
+     *
+     * <p>Десериализацию тела делай сам через {@code response.as(...)}
+     * или {@code response.as(TypeRef)}.
+     *
+     * @param spec     спецификация запроса
+     * @param respSpec стратегия валидации ответа
+     * @param call     функция, выполняющая запрос
+     * @return сырой {@link Response} после валидации
+     * @throws ApiException если ответ не прошёл валидацию
+     */
+    default Response executeRaw(@NonNull RequestSpecification spec,
+                                @NonNull ResponseSpecification respSpec,
+                                @NonNull Function<RequestSpecification, Response> call) {
+        Response response = call.apply(spec);
+        response.then().spec(respSpec);
+        return response;
+    }
+
+    /**
+     * {@code POST path} с телом, возвращает сырой {@link Response}.
+     *
+     * <p>Типовой сценарий — логин: тело описывает учётные данные,
+     * а токен приходит в заголовке {@code Authorization}. Извлечь его
+     * можно через {@link #header(Response, String)}.
+     *
+     * <p>Пример:
+     * <pre>{@code
+     *   Response r = postForResponse(
+     *       restClient.request(),
+     *       "/auth/login",
+     *       new LoginRequest("user", "pass"),
+     *       ResponseSpecs.OK);
+     *   String token = header(r, "Authorization");
+     * }</pre>
+     *
+     * @param spec     спецификация запроса
+     * @param path     путь эндпоинта
+     * @param body     тело запроса
+     * @param respSpec ожидаемая стратегия ответа
+     * @return сырой {@link Response} после валидации
+     * @throws ApiException если ответ не прошёл валидацию
+     */
+    default Response postForResponse(@NonNull RequestSpecification spec,
+                                     @NonNull String path,
+                                     @NonNull Object body,
+                                     @NonNull ResponseSpecification respSpec) {
+        return executeRaw(spec, respSpec, s -> s.body(body).post(path));
+    }
+
+    /**
+     * Извлекает значение заголовка из ответа, гарантируя его наличие.
+     *
+     * <p>Имя заголовка регистронезависимо — HTTP не различает
+     * {@code Authorization} и {@code authorization}.
+     *
+     * <p>Если заголовка нет — бросается {@link ApiException} с телом ответа
+     * в сообщении, чтобы сразу видеть контекст, а не ловить {@code null}
+     * где-то дальше по стеку.
+     *
+     * @param response сырой ответ
+     * @param name     имя заголовка
+     * @return значение заголовка
+     * @throws ApiException если заголовка нет в ответе
+     */
+    default String header(@NonNull Response response, @NonNull String name) {
+        String value = response.header(name);
+        if (value == null) {
+            throw new ApiException("Header '" + name + "' not found in response: "
+                    + response.asPrettyString());
+        }
+        return value;
     }
 
     // ---------- GET ----------
@@ -199,6 +287,7 @@ public interface RequestExecutor {
                 s -> s.pathParams(pathParams).queryParams(queryParams).get(path), type);
     }
 
+    // ---------- POST ----------
 
     /**
      * {@code POST path} с телом. Ожидается 200, тело — {@code T}.
@@ -236,6 +325,7 @@ public interface RequestExecutor {
         return execute(spec, respSpec, s -> s.body(body).post(path), type);
     }
 
+    // ---------- PATCH ----------
 
     /**
      * {@code PATCH path} с телом. Ожидается 200, тело — {@code T}.
@@ -273,6 +363,7 @@ public interface RequestExecutor {
         return execute(spec, respSpec, s -> s.body(body).patch(path), type);
     }
 
+    // ---------- DELETE ----------
 
     /**
      * {@code DELETE path}. Ожидается 204 No Content.

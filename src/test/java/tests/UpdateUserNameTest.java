@@ -47,7 +47,7 @@ public class UpdateUserNameTest extends BaseTest {
     public void updateNameWithValidValueTest(String name) {
         updateProfileName(createUser, name, ResponseSpecs.requestReturnsOK());
 
-        GetUserProfileResponse profile = fetchProfile(createUser);
+        CustomerProfileJsonResponse profile = fetchProfile(createUser);
 
         softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
         softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());
@@ -80,7 +80,7 @@ public class UpdateUserNameTest extends BaseTest {
     public void updateNameWithInvalidValueTest(String name) {
         updateProfileName(createUser, name, ResponseSpecs.nameIsInvalid());
 
-        GetUserProfileResponse profile = fetchProfile(createUser);
+        CustomerProfileJsonResponse profile = fetchProfile(createUser);
 
         softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
         softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());
@@ -100,7 +100,7 @@ public class UpdateUserNameTest extends BaseTest {
     public void updateNameWithInvalidBodyTest(String rawBody) {
         updateProfileRaw(createUser, rawBody, ResponseSpecs.requestIsMalformed());
 
-        GetUserProfileResponse profile = fetchProfile(createUser);
+        CustomerProfileJsonResponse profile = fetchProfile(createUser);
 
         softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
         softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());
@@ -111,7 +111,7 @@ public class UpdateUserNameTest extends BaseTest {
     public void updateNameWithoutBodyTest() {
         updateProfileNoBody(createUser, ResponseSpecs.requestIsMalformed());
 
-        GetUserProfileResponse profile = fetchProfile(createUser);
+        CustomerProfileJsonResponse profile = fetchProfile(createUser);
 
         softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
         softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());

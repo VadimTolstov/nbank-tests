@@ -164,11 +164,11 @@ public abstract class BaseTest {
         new AddDepositMoneyRequester(authUser(user), response).postRaw(rawBody);
     }
 
-    protected GetUserProfileResponse fetchProfile(CreateUserJsonRequest user) {
+    protected CustomerProfileJsonResponse fetchProfile(CreateUserJsonRequest user) {
         return new GetProfileRequester(authUser(user), ResponseSpecs.requestReturnsOK())
                 .get()
                 .extract()
-                .as(GetUserProfileResponse.class);
+                .as(CustomerProfileJsonResponse.class);
     }
 
     protected void updateProfileName(CreateUserJsonRequest user, String name, ResponseSpecification response) {
