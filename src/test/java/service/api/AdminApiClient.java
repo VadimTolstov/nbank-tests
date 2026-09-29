@@ -5,16 +5,20 @@ import api.core.RestClient;
 import api.endpoint.AdminEndpoints;
 import api.spec.ResponseSpecs;
 import config.Config;
+import io.restassured.common.mapper.TypeRef;
 import io.restassured.filter.log.LogDetail;
 import lombok.NonNull;
 import models.rest.AdminCredentials;
 import models.rest.CreateUserJsonResponse;
-import models.rest.GetUsersJsonResponse;
 import models.rest.UserJson;
+import org.jetbrains.annotations.Nullable;
 import service.AdminClient;
 
+import java.util.List;
+import java.util.Map;
+
 public class AdminApiClient implements AdminClient, RequestExecutor {
-    private static Config CFG = Config.getInstance();
+    private static final Config CFG = Config.getInstance();
 
     private final RestClient restClient;
 
@@ -28,8 +32,30 @@ public class AdminApiClient implements AdminClient, RequestExecutor {
     }
 
     @Override
-    public GetUsersJsonResponse getUsers() {
-        return null;
+    public List<CreateUserJsonResponse> getUsers() {
+        return get(
+                restClient.authRequest(AdminCredentials.LOGIN.getValue()),
+                AdminEndpoints.GET_ALL_USERS,
+                ResponseSpecs.OK,
+                new TypeRef<>() {
+                }
+        );
+    }
+
+    @Override
+    public @Nullable CreateUserJsonResponse getUserById(long id) {
+        return getUsers().stream()
+                .filter(user -> user.getId() == id)
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public @Nullable CreateUserJsonResponse getUserByUsername(@NonNull String username) {
+        return getUsers().stream()
+                .filter(user -> user.getUsername().equals(username))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -40,6 +66,14 @@ public class AdminApiClient implements AdminClient, RequestExecutor {
                 userJson,
                 ResponseSpecs.CREATED,
                 CreateUserJsonResponse.class
+        );
+    }
+
+    @Override
+    public void deleteUserById(long id) {
+        delete(restClient.request(),
+                AdminEndpoints.DELETE_USER_ID,
+                Map.of("id", id)
         );
     }
 }

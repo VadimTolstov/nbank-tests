@@ -5,7 +5,7 @@ package api.endpoint;
  */
 public interface CustomerEndpoints {
 
-    String GET_ALL_USERS = "/admin/users";
-    String CREATE_USER = GET_ALL_USERS;
-    String DELETE_USER_ID = GET_ALL_USERS + "/{id}";
+    String GET_PROFILE = "/customer/profile";
+    String UPDATE_PROFILE = GET_PROFILE;
+    String GET_ACCOUNTS = "/customer/accounts";
 }

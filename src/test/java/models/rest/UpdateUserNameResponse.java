@@ -6,7 +6,9 @@ import lombok.Builder;
 
 @Builder(toBuilder = true)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public record UserJson(
+public record UpdateUserNameResponse(
+        @JsonProperty("id")
+        Long id,
         @JsonProperty("username")
         String username,
         @JsonProperty("password")

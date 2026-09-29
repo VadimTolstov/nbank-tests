@@ -238,6 +238,7 @@ public interface RequestExecutor {
         return execute(spec, respSpec, s -> s.get(path), type);
     }
 
+
     /**
      * {@code GET path} с path-параметрами (шаблон вида {@code /artist/{id}}).
      * Ожидается 200, тело — {@code T}.
@@ -256,6 +257,18 @@ public interface RequestExecutor {
         return execute(spec, ResponseSpecs.OK,
                 s -> s.pathParams(pathParams).get(path), type);
     }
+
+    /**
+     * {@code GET path}, с явной стратегией валидации, тело — дженерик-тип
+     * (например, {@code List<Foo>}).
+     */
+    default <T> T get(@NonNull RequestSpecification spec,
+                      @NonNull String path,
+                      @NonNull ResponseSpecification respSpec,
+                      @NonNull TypeRef<T> type) {
+        return execute(spec, respSpec, s -> s.get(path), type);
+    }
+
 
     /**
      * {@code GET path} с path- и query-параметрами, ответ — дженерик-тип
@@ -363,6 +376,25 @@ public interface RequestExecutor {
         return execute(spec, respSpec, s -> s.body(body).patch(path), type);
     }
 
+    // ---------- PUT ----------
+
+    /**
+     * {@code PUT path} с телом. Ожидается 200, тело — T.
+     *
+     * @param spec спецификация запроса
+     * @param path путь эндпоинта
+     * @param body тело запроса
+     * @param type класс тела ответа
+     * @param <T>  тип тела
+     * @return десериализованное тело
+     */
+    default <T> T put(@NonNull RequestSpecification spec,
+                      @NonNull String path,
+                      @NonNull Object body,
+                      @NonNull Class<T> type) {
+        return execute(spec, ResponseSpecs.OK, s -> s.body(body).put(path), type);
+    }
+
     // ---------- DELETE ----------
 
     /**
@@ -388,5 +420,28 @@ public interface RequestExecutor {
                         @NonNull String path,
                         @NonNull ResponseSpecification respSpec) {
         executeVoid(spec, respSpec, s -> s.delete(path));
+    }
+
+    /**
+     * {@code DELETE path} с path-параметрами (шаблон вида {@code /admin/users/{id}}).
+     * Ожидается 204 No Content.
+     */
+    default void delete(@NonNull RequestSpecification spec,
+                        @NonNull String path,
+                        @NonNull Map<String, ?> pathParams) {
+        executeVoid(spec, ResponseSpecs.NO_CONTENT,
+                s -> s.pathParams(pathParams).delete(path));
+    }
+
+    /**
+     * {@code DELETE path} с path-параметрами (шаблон вида {@code /admin/users/{id}})
+     * с явной стратегией валидации.
+     */
+    default void delete(@NonNull RequestSpecification spec,
+                        @NonNull String path,
+                        @NonNull Map<String, ?> pathParams,
+                        @NonNull ResponseSpecification respSpec) {
+        executeVoid(spec, respSpec,
+                s -> s.pathParams(pathParams).delete(path));
     }
 }

@@ -2,8 +2,9 @@ package service;
 
 import lombok.NonNull;
 import models.rest.CreateUserJsonResponse;
-import models.rest.GetUsersJsonResponse;
 import models.rest.UserJson;
+
+import java.util.List;
 
 public interface AdminClient {
 
@@ -12,7 +13,23 @@ public interface AdminClient {
      *
      * @return массив пользователей.
      */
-    GetUsersJsonResponse getUsers();
+    List<CreateUserJsonResponse> getUsers();
+
+    /**
+     * Возвращает пользователя по id.
+     *
+     * @param id id пользователя.
+     * @return пользователь по id.
+     */
+    CreateUserJsonResponse getUserById(long id);
+
+    /**
+     * Возвращает пользователя по username.
+     *
+     * @param username имя пользователя.
+     * @return пользователь по имени.
+     */
+    CreateUserJsonResponse getUserByUsername(@NonNull String username);
 
     /**
      * Создаёт пользователя.
@@ -21,4 +38,11 @@ public interface AdminClient {
      * @return создает пользователя.
      */
     CreateUserJsonResponse createUsers(@NonNull UserJson userJson);
+
+    /**
+     * Удалить пользователя по id пользователя.
+     *
+     * @param id данные нового пользователя.
+     */
+    void deleteUserById(long id);
 }

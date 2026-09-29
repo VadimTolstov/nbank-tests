@@ -25,6 +25,7 @@ public class TestDataExtension implements BeforeEachCallback, AfterAllCallback, 
 //        if (testData != null) {
 //            //todo удалить все данные из бд и возможна заменить на удаление после каждого теста TestDataExtension.afterAll — второй NPE
             //todo если по api то делать удаление после каждого теста или будет пуста в контексте.
+            //todo либо через запрос api выгрести всех и последовательно удалить
 //        }
     }
 
