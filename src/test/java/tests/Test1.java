@@ -11,7 +11,7 @@ public class Test1 {
 
 
     @Data(
-            users = @User(username = "alicess1", password = "Vadim123!"),
+            users = @User(username = "alicess4", password = "Vadim123!"),
             randomUsers = 3
     )
     @Test

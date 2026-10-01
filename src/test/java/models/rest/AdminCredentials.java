@@ -6,9 +6,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum AdminCredentials {
-    LOGIN("admin"),
-    PASSWORD("admin");
+
+    LOGIN(AdminConstants.LOGIN),
+    PASSWORD(AdminConstants.PASSWORD);
 
     private final String value;
-
 }

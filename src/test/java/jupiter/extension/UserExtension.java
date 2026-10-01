@@ -3,7 +3,7 @@ package jupiter.extension;
 import generators.RandomData;
 import jupiter.annotation.Data;
 import jupiter.annotation.User;
-import models.rest.AdminCredentials;
+import models.rest.AdminConstants;
 import models.rest.CreateUserJsonResponse;
 import models.rest.UserJson;
 import models.rest.UserRole;
@@ -40,8 +40,8 @@ public class UserExtension implements BeforeEachCallback, ParameterResolver {
                             + context.getRequiredTestMethod().getName());
         }
 
-        authClient.authUser(AdminCredentials.LOGIN.getValue(),
-                AdminCredentials.PASSWORD.getValue());
+        authClient.authUser(AdminConstants.LOGIN,
+                AdminConstants.PASSWORD);
 
         if (dataAnno != null) {
             TestDataExtension.getContent().usersJson()

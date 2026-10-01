@@ -2,13 +2,22 @@ package jupiter.extension;
 
 import jupiter.annotation.Data;
 import models.TestData;
+import models.rest.AdminConstants;
+import models.rest.CreateUserJsonResponse;
+import models.rest.UserRole;
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
+import service.AdminClient;
+import service.AuthClient;
+import service.api.AdminApiClient;
+import service.api.AuthApiClient;
 
 import java.util.HashSet;
 
 public class TestDataExtension implements BeforeEachCallback, AfterAllCallback, ParameterResolver {
     public static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(TestDataExtension.class);
+    private final AdminClient adminClient = new AdminApiClient();
+    private final AuthClient authClient = new AuthApiClient();
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
@@ -21,12 +30,13 @@ public class TestDataExtension implements BeforeEachCallback, AfterAllCallback, 
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
-//        TestData testData = getContent();
-//        if (testData != null) {
-//            //todo удалить все данные из бд и возможна заменить на удаление после каждого теста TestDataExtension.afterAll — второй NPE
-            //todo если по api то делать удаление после каждого теста или будет пуста в контексте.
-            //todo либо через запрос api выгрести всех и последовательно удалить
-//        }
+        authClient.authUser(AdminConstants.LOGIN, AdminConstants.PASSWORD);
+        for (CreateUserJsonResponse user : adminClient.getUsers().stream()
+                .filter(user -> !user.getRole().equals(UserRole.ADMIN))
+                .toList()
+        ) {
+            adminClient.deleteUserById(user.getId());
+        }
     }
 
 
