@@ -1,6 +1,7 @@
 package jupiter.extension;
 
 import generators.RandomData;
+import jupiter.annotation.Account;
 import jupiter.annotation.Data;
 import jupiter.annotation.User;
 import models.rest.AdminConstants;
@@ -16,6 +17,7 @@ import service.api.AdminApiClient;
 import service.api.AuthApiClient;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class UserExtension implements BeforeEachCallback, ParameterResolver {
@@ -47,7 +49,7 @@ public class UserExtension implements BeforeEachCallback, ParameterResolver {
             TestDataExtension.getContent().usersJson()
                     .addAll(createFromData(dataAnno));
         } else {
-            setUser(createFromUsers(userAnno));
+            setUser(createWithMetadata(buildUser(userAnno), userAnno));
 
         }
     }
@@ -57,25 +59,42 @@ public class UserExtension implements BeforeEachCallback, ParameterResolver {
 
         if (ArrayUtils.isNotEmpty(dataAnno.users())) {
             for (User userAnno : dataAnno.users()) {
-                created.add(createSingle(buildUser(userAnno)));
+                created.add(createWithMetadata(buildUser(userAnno), userAnno));
             }
         }
         for (int i = 0; i < dataAnno.randomUsers(); i++) {
-            created.add(createSingle(buildRandomUser()));
+            created.add(createRandom());
         }
         return created;
     }
 
-    private CreateUserJsonResponse createSingle(UserJson draft) {
+    /** Пользователь, созданный из @User-аннотации — с метаданными счетов. */
+    private CreateUserJsonResponse createWithMetadata(UserJson draft, User userAnno) {
         return adminClient.createUsers(draft)
                 .toBuilder()
                 .password(draft.password())
+                .randomAccounts(userAnno.randomAccounts())
+                .accountMetas(toMetas(userAnno.accounts()))
                 .build();
     }
 
+    /** Случайный пользователь — без счёт-метаданных. */
+    private CreateUserJsonResponse createRandom() {
+        UserJson draft = buildRandomUser();
+        return adminClient.createUsers(draft)
+                .toBuilder()
+                .password(draft.password())
+                .randomAccounts(0)
+                .accountMetas(new ArrayList<>())
+                .build();
+    }
 
-    private CreateUserJsonResponse createFromUsers(User userAnno) {
-        return createSingle(buildUser(userAnno));
+    private List<CreateUserJsonResponse.AccountMeta> toMetas(Account[] accounts) {
+        if (ArrayUtils.isEmpty(accounts)) {
+            return List.of();
+        }
+        return Arrays.stream(accounts).map(a -> new CreateUserJsonResponse.AccountMeta(a.balance()))
+                .toList();
     }
 
     private UserJson buildUser(User userAnno) {

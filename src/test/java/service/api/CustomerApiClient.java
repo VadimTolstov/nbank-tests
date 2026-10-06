@@ -2,16 +2,16 @@ package service.api;
 
 import api.core.RequestExecutor;
 import api.core.RestClient;
+import api.endpoint.AdminEndpoints;
 import api.endpoint.CustomerEndpoints;
 import api.spec.ResponseSpecs;
 import config.Config;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.http.ContentType;
 import lombok.NonNull;
-import models.rest.CustomerAccountJson;
-import models.rest.CustomerProfileJsonResponse;
-import models.rest.UpdateUserNameRequest;
-import models.rest.UpdateUserNameResponse;
+import models.rest.*;
+import org.jetbrains.annotations.Nullable;
 import service.CustomerClient;
 
 import java.util.List;
@@ -49,6 +49,15 @@ public class CustomerApiClient implements CustomerClient, RequestExecutor {
     }
 
     @Override
+    public @Nullable CustomerAccountJson getAccountById(@NonNull String username, long accountId) {
+        return getAccounts(username).stream()
+                .filter(account -> account.id() == accountId)
+                .findFirst()
+                .orElse(null);
+    }
+
+
+    @Override
     public UpdateUserNameResponse updateUserProfileName(@NonNull String username, @NonNull UpdateUserNameRequest name) {
         return put(restClient.authRequest(username),
                 CustomerEndpoints.UPDATE_PROFILE,
@@ -56,4 +65,18 @@ public class CustomerApiClient implements CustomerClient, RequestExecutor {
                 UpdateUserNameResponse.class
         );
     }
+
+    public void updateNameExpectingError(@NonNull String username,
+                                         @NonNull String rawJson,
+                                          @NonNull String errorField,
+                                          @NonNull String message) {
+        executeVoid(
+                restClient.authRequest(username),
+                ResponseSpecs.errorWithField(400, errorField, message),
+                s -> s.contentType(ContentType.JSON)
+                        .body(rawJson)
+                        .put(CustomerEndpoints.UPDATE_PROFILE)
+        );
+    }
+
 }

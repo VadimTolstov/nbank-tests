@@ -1,5 +1,6 @@
 package jupiter.extension;
 
+import api.core.AuthContext;
 import jupiter.annotation.Data;
 import models.TestData;
 import models.rest.AdminConstants;
@@ -12,9 +13,10 @@ import service.AuthClient;
 import service.api.AdminApiClient;
 import service.api.AuthApiClient;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 
-public class TestDataExtension implements BeforeEachCallback, AfterAllCallback, ParameterResolver {
+public class TestDataExtension implements BeforeEachCallback, SuiteExtension, ParameterResolver {
     public static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(TestDataExtension.class);
     private final AdminClient adminClient = new AdminApiClient();
     private final AuthClient authClient = new AuthApiClient();
@@ -23,20 +25,20 @@ public class TestDataExtension implements BeforeEachCallback, AfterAllCallback, 
     public void beforeEach(ExtensionContext context) throws Exception {
         AnnotationSupport.findAnnotation(context.getRequiredTestMethod(), Data.class)
                 .ifPresent(annotation -> {
-                    setContent(new TestData(new HashSet<>()));
+                    setContent(new TestData(new ArrayList<>()));
                 });
     }
 
-
     @Override
-    public void afterAll(ExtensionContext context) throws Exception {
+    public void afterSuite() {
         authClient.authUser(AdminConstants.LOGIN, AdminConstants.PASSWORD);
         for (CreateUserJsonResponse user : adminClient.getUsers().stream()
-                .filter(user -> !user.getRole().equals(UserRole.ADMIN))
+                .filter(user -> !user.role().equals(UserRole.ADMIN))
                 .toList()
         ) {
-            adminClient.deleteUserById(user.getId());
+            adminClient.deleteUserById(user.id());
         }
+        AuthContext.clear();
     }
 
 

@@ -45,7 +45,7 @@ public class AdminApiClient implements AdminClient, RequestExecutor {
     @Override
     public @Nullable CreateUserJsonResponse getUserById(long id) {
         return getUsers().stream()
-                .filter(user -> user.getId() == id)
+                .filter(user -> user.id() == id)
                 .findFirst()
                 .orElse(null);
     }
@@ -53,7 +53,7 @@ public class AdminApiClient implements AdminClient, RequestExecutor {
     @Override
     public @Nullable CreateUserJsonResponse getUserByUsername(@NonNull String username) {
         return getUsers().stream()
-                .filter(user -> user.getUsername().equals(username))
+                .filter(user -> user.username().equals(username))
                 .findFirst()
                 .orElse(null);
     }

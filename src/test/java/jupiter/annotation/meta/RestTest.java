@@ -1,6 +1,7 @@
 package jupiter.annotation.meta;
 
 import io.qameta.allure.Feature;
+import jupiter.extension.AccountExtension;
 import jupiter.extension.ApiLoginExtension;
 import jupiter.extension.TestDataExtension;
 import jupiter.extension.UserExtension;
@@ -20,6 +21,7 @@ import java.lang.annotation.Target;
         TestDataExtension.class,
         UserExtension.class,
         ApiLoginExtension.class,
+        AccountExtension.class
 })
 public @interface RestTest {
 }

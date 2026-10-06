@@ -3,32 +3,32 @@ package tests;
 import jupiter.annotation.ApiLogin;
 import jupiter.annotation.User;
 import jupiter.annotation.meta.RestTest;
+import models.comparison.ModelAssertions;
 import models.rest.CreateUserJsonResponse;
 import models.rest.CustomerAccountJson;
 import models.rest.UserJson;
 import org.junit.jupiter.api.Test;
 import service.AccountsClient;
+import service.CustomerClient;
 import service.api.AccountsApiClient;
-
-import java.math.BigDecimal;
+import service.api.CustomerApiClient;
 
 @RestTest
-public class CreateAccountTest extends BaseTest {
+public class CreateAccountTest {
     private final AccountsClient accountsClient = new AccountsApiClient();
+    private final CustomerClient customerClient = new CustomerApiClient();
 
     @User
     @ApiLogin
     @Test
     public void userCanCreateAccountTest(CreateUserJsonResponse user) {
-        CustomerAccountJson account = accountsClient.createAccount(
-                new UserJson(user.getUsername(),
-                        user.getPassword(),
-                        user.getRole())
+        CustomerAccountJson accountResponse = accountsClient.createAccount(
+                new UserJson(user.username(),
+                        user.password(),
+                        user.role())
         );
-//todo надо добавить систему сравнения модели или что то аналогичное
-        softly.assertThat(account)
-                .usingRecursiveComparison()
-                .withComparatorForType(BigDecimal::compareTo, BigDecimal.class)
-                .isEqualTo(getAccountById(user, account.getId()));
+
+        CustomerAccountJson accountById = customerClient.getAccountById(user.username(), accountResponse.id());
+        ModelAssertions.assertThatModels(accountResponse, accountById).match();
     }
 }

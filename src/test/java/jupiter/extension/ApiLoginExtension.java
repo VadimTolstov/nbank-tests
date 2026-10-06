@@ -62,7 +62,7 @@ public class ApiLoginExtension implements BeforeEachCallback, ParameterResolver 
                         "Пустой @ApiLogin с @Data требует хотя бы одного пользователя.");
             }
             for (CreateUserJsonResponse user : testData.usersJson()) {
-                authClient.authUser(user.getUsername(), user.getPassword());
+                authClient.authUser(user.username(), user.password());
             }
             return;
         }
@@ -72,7 +72,7 @@ public class ApiLoginExtension implements BeforeEachCallback, ParameterResolver 
             throw new IllegalStateException(
                     "Пустой @ApiLogin требует @User или @Data над методом.");
         }
-        authClient.authUser(user.getUsername(), user.getPassword());
+        authClient.authUser(user.username(), user.password());
     }
 
     @Override
@@ -124,14 +124,14 @@ public class ApiLoginExtension implements BeforeEachCallback, ParameterResolver 
         // 3. Единственный @User
         CreateUserJsonResponse user = UserExtension.getUser();
         if (user != null) {
-            return user.getUsername();
+            return user.username();
         }
 
         // 4. Единственный из @Data
         if (AnnotationSupport.isAnnotated(extensionContext.getRequiredTestMethod(), Data.class)) {
             TestData data = TestDataExtension.getContent();
             if (data != null && data.usersJson().size() == 1) {
-                return data.usersJson().stream().filter(Objects::nonNull).findFirst().get().getUsername();
+                return data.usersJson().stream().filter(Objects::nonNull).findFirst().get().username();
             }
             throw new IllegalStateException(
                     "При @Data с несколькими пользователями укажи @Token(\"username\"). "

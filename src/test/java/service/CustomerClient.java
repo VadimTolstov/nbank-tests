@@ -21,6 +21,12 @@ public interface CustomerClient {
     List<CustomerAccountJson> getAccounts(@NonNull String username);
 
     /**
+     * Получает аккаунт у пользователя по id.
+     *
+     */
+    CustomerAccountJson getAccountById(@NonNull String username, long accountId);
+
+    /**
      * Обновляем профиль у пользователя.
      *
      */

@@ -4,6 +4,7 @@ import api.ApiErrors;
 import generators.RandomModelGenerator;
 import jupiter.annotation.AdminApiLogin;
 import jupiter.annotation.meta.RestTest;
+import models.comparison.ModelAssertions;
 import models.rest.CreateUserJsonResponse;
 import models.rest.UserJson;
 import models.rest.UserRole;
@@ -18,27 +19,25 @@ import service.api.AdminApiClient;
 import java.util.stream.Stream;
 
 @RestTest
-public class CreateUserTest extends BaseTest {
-    private final AdminClient adminClient = new AdminApiClient();
+public class CreateUserTest {
+    private final AdminApiClient adminClient = new AdminApiClient();
 
     @AdminApiLogin
     @Test
     public void adminCanCreateUserWithCorrectData() {
         UserJson userJson = RandomModelGenerator.generate(UserJson.class);
         CreateUserJsonResponse userResponse = adminClient.createUsers(userJson);
-        userResponse = adminClient.getUserById(userResponse.getId());
-        //todo добавить проверку модели ответа
-        softly.assertThat(userResponse.getUsername()).isEqualTo(userJson.username());
-        softly.assertThat(userResponse.getPassword()).isNotEqualTo(userJson.password());
-        softly.assertThat(userResponse.getRole()).isEqualTo(userJson.role());
+
+        ModelAssertions.assertThatModels(userJson, userResponse).match();
+        ModelAssertions.assertThatModels(adminClient.getUserById(userResponse.id()), userResponse).match();
     }
 
     public static Stream<Arguments> userInvalidData() {
         return Stream.of(
-                Arguments.of("   ", "Password33$", UserRole.USER,  ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_BLANK),
-                Arguments.of("ab", "Password33$", UserRole.USER,  ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_LENGTH),
-                Arguments.of("abc$", "Password33$", UserRole.USER,  ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_INVALID_CHARS),
-                Arguments.of("abc%", "Password33$", UserRole.USER,  ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_INVALID_CHARS)
+                Arguments.of("   ", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_BLANK),
+                Arguments.of("ab", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_LENGTH),
+                Arguments.of("abc$", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_INVALID_CHARS),
+                Arguments.of("abc%", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_INVALID_CHARS)
         );
     }
 
@@ -46,8 +45,8 @@ public class CreateUserTest extends BaseTest {
     @MethodSource("userInvalidData")
     @ParameterizedTest(name = "[{index}] username={0} → {4}")
     public void adminCanNotCreateUserWithInvalidData(String username, String password, UserRole role, String errorKey, String errorValue) {
-        ((AdminApiClient) adminClient).createUsersExpectingError(new UserJson(username, password, role), errorKey, errorValue);
+        adminClient.createUsersExpectingError(new UserJson(username, password, role), errorKey, errorValue);
 
-        Assertions.assertNull(getUserByName(username));
+        Assertions.assertNull(adminClient.getUserByUsername(username));
     }
 }

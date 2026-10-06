@@ -1,18 +1,19 @@
 package models.rest;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class CustomerAccountJson extends BaseModel {
-    private Long id;
-    private String accountNumber;
-    private BigDecimal balance;
+@Builder(toBuilder = true)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public record CustomerAccountJson(
+        @JsonProperty("id")
+        Long id,
+        @JsonProperty("accountNumber")
+        String accountNumber,
+        @JsonProperty("balance")
+        BigDecimal balance
+) {
 }

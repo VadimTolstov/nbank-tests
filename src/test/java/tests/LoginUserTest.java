@@ -1,43 +1,34 @@
 package tests;
 
-import generators.RandomData;
-import models.rest.AdminCredentials;
-import models.rest.LoginUserRequest;
-import models.rest.CreateUserJsonRequest;
+import generators.RandomModelGenerator;
+import jupiter.annotation.AdminApiLogin;
+import jupiter.annotation.meta.RestTest;
+import models.rest.AdminConstants;
+import models.rest.UserJson;
 import models.rest.UserRole;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import requests.LoginUserRequester;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
+import service.AdminClient;
+import service.AuthClient;
+import service.api.AdminApiClient;
+import service.api.AuthApiClient;
 
+@RestTest
 public class LoginUserTest extends BaseTest {
+    private final AdminClient adminClient = new AdminApiClient();
+    private final AuthClient authClient = new AuthApiClient();
 
     @Test
     public void adminCanGenerateAuthTokenTest() {
-        LoginUserRequest userRequest = LoginUserRequest.builder()
-                .username(AdminCredentials.LOGIN.getValue())
-                .password(AdminCredentials.PASSWORD.getValue())
-                .build();
-
-        new LoginUserRequester(RequestSpecs.unauthSpec(),
-                ResponseSpecs.requestReturnsOK())
-                .post(userRequest);
+        UserJson user = new UserJson(AdminConstants.LOGIN, AdminConstants.PASSWORD, UserRole.ADMIN);
+        authClient.authUser(user.username(), user.password());
     }
 
+    @AdminApiLogin
     @Test
     public void userCanGenerateAuthTokenTest() {
-        CreateUserJsonRequest createUserJsonRequest = CreateUserJsonRequest.builder()
-                .username(RandomData.getUsername())
-                .password(RandomData.getPassword())
-                .role(UserRole.USER)
-                .build();
+        UserJson user = RandomModelGenerator.generate(UserJson.class);
+        adminClient.createUsers(user);
 
-        createUser(createUserJsonRequest);
-
-        new LoginUserRequester(RequestSpecs.unauthSpec(),
-                ResponseSpecs.requestReturnsOK())
-                .post(LoginUserRequest.builder().username(createUserJsonRequest.getUsername()).password(createUserJsonRequest.getPassword()).build())
-                .header("Authorization", Matchers.notNullValue());
+        authClient.authUser(user.username(), user.password());
     }
 }

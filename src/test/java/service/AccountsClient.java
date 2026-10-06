@@ -24,5 +24,5 @@ public interface AccountsClient {
      *
      * @param depositJsonRequest данные перевода.
      */
-    DepositJsonResponse deposit(@NonNull String username, DepositJsonRequest depositJsonRequest);
+    DepositJsonResponse deposit(@NonNull String username,@NonNull DepositJsonRequest depositJsonRequest);
 }

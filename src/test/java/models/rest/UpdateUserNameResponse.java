@@ -11,8 +11,8 @@ public record UpdateUserNameResponse(
         Long id,
         @JsonProperty("username")
         String username,
-        @JsonProperty("password")
-        String password,
+        @JsonProperty("name")
+        String name,
         @JsonProperty("role")
         UserRole role
 ) {

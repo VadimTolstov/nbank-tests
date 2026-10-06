@@ -1,17 +1,18 @@
 package models.rest;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class DepositJsonRequest extends BaseModel {
-    private Long accountId;
-    private BigDecimal amount;
+@Builder(toBuilder = true)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public record DepositJsonRequest(
+        @JsonProperty("accountId")
+        Long accountId,
+        @JsonProperty("amount")
+        BigDecimal amount
+) {
+
 }

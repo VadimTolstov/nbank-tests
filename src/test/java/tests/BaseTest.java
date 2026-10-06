@@ -47,14 +47,14 @@ public abstract class BaseTest {
 
     protected BigDecimal balanceOf(CreateUserJsonRequest user) {
         return accountsOf(user).stream()
-                .map(CustomerAccountJson::getBalance)
+                .map(CustomerAccountJson::balance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     protected BigDecimal getBalance(CreateUserJsonRequest user, Long accountId) {
         return accountsOf(user).stream()
-                .filter(a -> a.getId().equals(accountId))
-                .map(CustomerAccountJson::getBalance)
+                .filter(a -> a.id().equals(accountId))
+                .map(CustomerAccountJson::balance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -67,22 +67,22 @@ public abstract class BaseTest {
 
     protected CreateUserJsonResponse getUserById(CreateUserJsonResponse user) {
         return getUsers().stream()
-                .filter(u -> u.getId().equals(user.getId()))
+                .filter(u -> u.id().equals(user.id()))
                 .findFirst()
                 .get();
     }
 
     protected @Nullable CreateUserJsonResponse getUserByName(String name) {
         return getUsers().stream()
-                .filter(u -> name.equals(u.getUsername()))
+                .filter(u -> name.equals(u.username()))
                 .findFirst()
                 .orElse(null);
     }
 
     protected CustomerAccountJson getAccountById(CreateUserJsonResponse user, Long accountId) {
-        return getUserById(user).getAccounts()
+        return getUserById(user).accounts()
                 .stream()
-                .filter(a -> a.getId().equals(accountId))
+                .filter(a -> a.id().equals(accountId))
                 .findFirst()
                 .get();
     }
@@ -112,32 +112,32 @@ public abstract class BaseTest {
     protected UserWithAccount freshUserWithAccount() {
         CreateUserJsonRequest user = freshUser();
         createUser(user);
-        return new UserWithAccount(user, createAccount(user).getId());
+        return new UserWithAccount(user, createAccount(user).id());
     }
 
-    protected void addDeposit(RequestSpecification spec,
-                              ResponseSpecification response,
-                              Long accountId,
-                              BigDecimal amount) {
-        new AddDepositMoneyRequester(spec, response)
-                .post(new DepositJsonRequest(accountId, amount));
-    }
+//    protected void addDeposit(RequestSpecification spec,
+//                              ResponseSpecification response,
+//                              Long accountId,
+//                              BigDecimal amount) {
+//        new AddDepositMoneyRequester(spec, response)
+//                .post(new DepositJsonRequest(accountId, amount));
+//    }
 
-    protected void addDeposit(CreateUserJsonRequest user,
-                              ResponseSpecification response,
-                              Long accountId,
-                              BigDecimal amount) {
-        addDeposit(authUser(user), response, accountId, amount);
-    }
+//    protected void addDeposit(CreateUserJsonRequest user,
+//                              ResponseSpecification response,
+//                              Long accountId,
+//                              BigDecimal amount) {
+//        addDeposit(authUser(user), response, accountId, amount);
+//    }
 
-    protected void fillBalance(CreateUserJsonRequest user, Long accountId, BigDecimal total) {
-        BigDecimal left = total;
-        while (left.signum() > 0) {
-            BigDecimal part = left.min(DEPOSIT_MAX);
-            addDeposit(user, ResponseSpecs.requestReturnsOK(), accountId, part);
-            left = left.subtract(part);
-        }
-    }
+//    protected void fillBalance(CreateUserJsonRequest user, Long accountId, BigDecimal total) {
+//        BigDecimal left = total;
+//        while (left.signum() > 0) {
+//            BigDecimal part = left.min(DEPOSIT_MAX);
+//            addDeposit(user, ResponseSpecs.requestReturnsOK(), accountId, part);
+//            left = left.subtract(part);
+//        }
+//    }
 
     protected void transfer(RequestSpecification spec,
                             ResponseSpecification response,
@@ -160,9 +160,9 @@ public abstract class BaseTest {
                 """.formatted(accountIdJson, amountJson);
     }
 
-    protected void depositRaw(CreateUserJsonRequest user, String rawBody, ResponseSpecification response) {
-        new AddDepositMoneyRequester(authUser(user), response).postRaw(rawBody);
-    }
+//    protected void depositRaw(CreateUserJsonRequest user, String rawBody, ResponseSpecification response) {
+//        new AddDepositMoneyRequester(authUser(user), response).postRaw(rawBody);
+//    }
 
     protected CustomerProfileJsonResponse fetchProfile(CreateUserJsonRequest user) {
         return new GetProfileRequester(authUser(user), ResponseSpecs.requestReturnsOK())

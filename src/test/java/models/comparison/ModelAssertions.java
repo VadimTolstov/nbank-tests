@@ -2,6 +2,15 @@ package models.comparison;
 
 import org.assertj.core.api.AbstractAssert;
 
+/**
+ * Кастомные ассерты для сравнения моделей по правилам из
+ * {@code model-comparison.properties}.
+ *
+ * <p>Пример:
+ * <pre>{@code
+ *   ModelAssertions.assertThatModels(request, response).match();
+ * }</pre>
+ */
 public class ModelAssertions extends AbstractAssert<ModelAssertions, Object> {
 
     private final Object request;
@@ -18,21 +27,25 @@ public class ModelAssertions extends AbstractAssert<ModelAssertions, Object> {
     }
 
     public ModelAssertions match() {
-        ModelComparisonConfigLoader configLoader = new ModelComparisonConfigLoader("model-comparison.properties");
-        ModelComparisonConfigLoader.ComparisonRule rule = configLoader.getRuleFor(request.getClass());
+        ModelComparisonConfigLoader configLoader =
+                new ModelComparisonConfigLoader("model-comparison.properties");
+        ModelComparisonConfigLoader.ComparisonRule rule =
+                configLoader.getRuleFor(request.getClass());
 
-        if (rule != null) {
-            ModelComparator.ComparisonResult result = ModelComparator.compareFields(
-                    request,
-                    response,
-                    rule.getFieldMappings()
-            );
+        if (rule == null) {
+            failWithMessage("No comparison rule found for class %s",
+                    request.getClass().getSimpleName());
+            return this;
+        }
 
-            if (!result.isSuccess()) {
-                failWithMessage("Model comparison failed with mismatched fields:\n%s", result);
-            }
-        } else {
-            failWithMessage("No comparison rule found for class %s", request.getClass().getSimpleName());
+        ModelComparator.ComparisonResult result = ModelComparator.compareFields(
+                request,
+                response,
+                rule.getFieldMappings()
+        );
+
+        if (!result.isSuccess()) {
+            failWithMessage("Model comparison failed with mismatched fields:\n%s", result);
         }
 
         return this;
