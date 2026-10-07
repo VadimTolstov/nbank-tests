@@ -53,4 +53,16 @@ public class AccountsApiClient implements AccountsClient, RequestExecutor {
                 DepositJsonResponse.class
         );
     }
+
+    public void performDepositExpectingError(@NonNull String username,
+                                             @NonNull DepositJsonRequest depositJsonRequest,
+                                             int expectedStatus,
+                                             @NonNull String errorWithField,
+                                             @NonNull String message) {
+        executeVoid(
+                restClient.authRequest(username),
+                ResponseSpecs.errorWithField(expectedStatus, errorWithField, message),
+                s -> s.body(depositJsonRequest).post(AccountsEndpoints.DEPOSIT)
+        );
+    }
 }

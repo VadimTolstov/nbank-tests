@@ -1,211 +1,144 @@
 package tests;
 
-import generators.RandomData;
-import io.restassured.specification.ResponseSpecification;
+import api.ApiErrors;
+import jupiter.annotation.Account;
 import jupiter.annotation.ApiLogin;
+import jupiter.annotation.Data;
 import jupiter.annotation.User;
 import jupiter.annotation.meta.RestTest;
-import models.rest.CreateUserJsonRequest;
+import models.TestData;
 import models.rest.CreateUserJsonResponse;
+import models.rest.CustomerAccountJson;
 import models.rest.DepositJsonRequest;
-import models.rest.UserRole;
-import org.junit.jupiter.api.BeforeEach;
+import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
-import service.AccountsClient;
+import service.CustomerClient;
 import service.api.AccountsApiClient;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
+import service.api.CustomerApiClient;
+import utils.Repeat;
 
 import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static api.ApiLimits.DEPOSIT_MAX;
-import static api.ApiLimits.DEPOSIT_MIN;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static api.ApiLimits.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RestTest
-public class DepositTest extends BaseTest {
-    AccountsClient accountsClient = new AccountsApiClient();
-
-    private static final String TEST_MESSAGE_BALANCE_NOT_CHANGED = "Баланс не должен меняться ";
-    private static final String TEST_MESSAGE_BALANCE_CHANGED = "Баланс должен увеличиться ровно на ";
-
-    private CreateUserJsonRequest firstUser;
-    private BigDecimal beforeBalanceFirstUser;
-    private Long accountIdFirstUser;
-
-    private void assertBalanceEquals(CreateUserJsonRequest user, BigDecimal before, String msg) {
-        assertEquals(0, before.compareTo(balanceOf(user)), msg);
-    }
-
-    @BeforeEach
-    public void setUp() {
-        firstUser = freshUser();
-
-        createUser(firstUser);
-        accountIdFirstUser = createAccount(firstUser).id();
-        beforeBalanceFirstUser = balanceOf(firstUser);
-    }
+public class DepositTest {
+    private final AccountsApiClient accountsClient = new AccountsApiClient();
+    private final CustomerClient customerClient = new CustomerApiClient();
+    private final static long NON_EXISTENT_ACCOUNT_ID = Long.MAX_VALUE;
 
     // ---------- POSITIVE:  ----------
+    static Stream<BigDecimal> validDepositAmounts() {
+        return Stream.of(
+                DEPOSIT_MIN,
+                DEPOSIT_MIN.add(MINIMUM_STEP_DEPOSIT),
+                DEPOSIT_MAX.subtract(MINIMUM_STEP_DEPOSIT),
+                DEPOSIT_MAX
+        );
+    }
+
     @User(randomAccounts = 1)
     @ApiLogin
     @ParameterizedTest
-    @ValueSource(strings = {"0.01", "0.02", "4999.99", "5000"})
-    public void depositValidBoundaryAmountChangesBalanceTest(String amount, CreateUserJsonResponse user) {
-        BigDecimal deposit = new BigDecimal(amount);
+    @MethodSource("validDepositAmounts")
+    public void depositValidBoundaryAmountChangesBalanceTest(BigDecimal amount, CreateUserJsonResponse user) {
         Long accountId = Objects.requireNonNull(user.accounts().stream().findFirst().orElse(null)).id();
-        accountsClient.deposit(user.username(), new DepositJsonRequest(accountId, deposit));
+        accountsClient.deposit(user.username(), new DepositJsonRequest(accountId, amount));
+        CustomerAccountJson accountById = customerClient.getAccountById(user.username(), accountId);
+        assertThat(accountById.balance()).isEqualByComparingTo(amount);
 
     }
 
     // ---------- NEGATIVE: границы  ----------
     public static Stream<Arguments> amountInvalidData() {
         return Stream.of(
-                Arguments.of("5000.01", ResponseSpecs.depositLimitExceeded()),
-                Arguments.of("0.00", ResponseSpecs.amountOrAccountIsInvalid()),
-                Arguments.of("-0.01", ResponseSpecs.amountOrAccountIsInvalid())
+                Arguments.of(DEPOSIT_MAX.add(MINIMUM_STEP_DEPOSIT), ApiErrors.Deposit.LIMIT_5000),
+                Arguments.of(DEPOSIT_MIN.subtract(MINIMUM_STEP_DEPOSIT), ApiErrors.Deposit.INVALID_AMOUNT),
+                Arguments.of(MINIMUM_STEP_DEPOSIT.negate(), ApiErrors.Deposit.INVALID_AMOUNT)
         );
     }
 
-//    @ParameterizedTest
-//    @MethodSource("amountInvalidData")
-//    public void depositInvalidBoundaryAmountDoesNotChangeBalanceTest(String amount, ResponseSpecification responseSpecs) {
-//        BigDecimal deposit = new BigDecimal(amount);
-//        addDeposit(firstUser,
-//                responseSpecs,
-//                accountIdFirstUser,
-//                deposit);
-//        assertBalanceEquals(firstUser, beforeBalanceFirstUser, TEST_MESSAGE_BALANCE_NOT_CHANGED + "при невалидном amount: " + amount);
-//    }
-//
-//    // ---------- POSITIVE: накопление ----------
-//    @Test
-//    public void depositSequentiallyAccumulatesBalanceTest() {
-//        addDeposit(firstUser, ResponseSpecs.requestReturnsOK(), accountIdFirstUser, DEPOSIT_MAX);
-//        addDeposit(firstUser, ResponseSpecs.requestReturnsOK(), accountIdFirstUser, DEPOSIT_MIN);
-//        assertBalanceEquals(firstUser,
-//                beforeBalanceFirstUser.add(DEPOSIT_MAX).add(DEPOSIT_MIN),
-//                TEST_MESSAGE_BALANCE_CHANGED + DEPOSIT_MAX.add(DEPOSIT_MIN));
-//
-//    }
+    @User(randomAccounts = 1)
+    @ApiLogin
+    @ParameterizedTest
+    @MethodSource("amountInvalidData")
+    public void depositInvalidBoundaryAmountDoesNotChangeBalanceTest(BigDecimal amount, String errorMessage, CreateUserJsonResponse user) {
+        Long accountId = Objects.requireNonNull(user.accounts().stream().findFirst().orElse(null)).id();
+        accountsClient.performDepositExpectingError(user.username(),
+                new DepositJsonRequest(accountId, amount),
+                HttpStatus.SC_BAD_REQUEST,
+                ApiErrors.KEY_MESSAGE,
+                errorMessage
+        );
+        assertThat(customerClient.getAccountById(user.username(), accountId).balance())
+                .isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    // ---------- POSITIVE: накопление ----------
+    @User(randomAccounts = 1)
+    @ApiLogin
+    @Test
+    public void depositSequentiallyAccumulatesBalanceTest(CreateUserJsonResponse user) {
+        Long accountId = Objects.requireNonNull(user.accounts().getFirst().id());
+        int count = 5;
+        Repeat.repeat(count, () -> {
+            accountsClient.deposit(user.username(), new DepositJsonRequest(accountId, DEPOSIT_MAX));
+        });
+        assertThat(customerClient.getAccountById(user.username(), accountId).balance())
+                .isEqualByComparingTo(DEPOSIT_MAX.multiply(BigDecimal.valueOf(count)));
+    }
 
     // ---------- NEGATIVE: невалидные типы / аккаунт ----------
-//    @Test
-//    public void depositToNonExistentAccountTest() {
-//        new AddDepositMoneyRequester(authUser(firstUser), ResponseSpecs.requestReturnsForbidden())
-//                .post(new DepositJsonRequest(NOT_EXIST_ACCOUNT_ID, DEPOSIT_MAX));
-//
-//        assertBalanceEquals(firstUser, beforeBalanceFirstUser, TEST_MESSAGE_BALANCE_NOT_CHANGED);
-//    }
+    @User(randomAccounts = 1)
+    @ApiLogin
+    @Test
+    public void depositToNonExistentAccountTest(CreateUserJsonResponse user) {
+        accountsClient.performDepositExpectingError(user.username(),
+                new DepositJsonRequest(
+                        NON_EXISTENT_ACCOUNT_ID,
+                        DEPOSIT_MAX),
+                HttpStatus.SC_FORBIDDEN,
+                ApiErrors.KEY_MESSAGE,
+                ApiErrors.Auth.UNAUTHORIZED_ACCOUNT
+        );
 
-//    @Test
-//    public void depositToForeignAccountDoesNotAffectBalancesTest() {
-//        CreateUserJsonRequest secondUser = CreateUserJsonRequest.builder()
-//                .username(RandomData.getUsername())
-//                .password(RandomData.getPassword())
-//                .role(UserRole.USER)
-//                .build();
-//
-//        createUser(secondUser);
-//        // получаем id депозита второго пользователя
-//        Long accountIdSecondUser = createAccount(secondUser).id();
-//        // получаем баланс второго пользователя
-//        BigDecimal balanceSecondUser = balanceOf(secondUser);
-//        // депозит от первого пользователя на депозит второго пользователя
-//        addDeposit(authUser(firstUser),
-//                ResponseSpecs.requestReturnsForbidden(),
-//                accountIdSecondUser,
-//                DEPOSIT_MAX);
-//        // получаем актуальный баланс второго пользователя
-//
-//        assertBalanceEquals(firstUser, beforeBalanceFirstUser, TEST_MESSAGE_BALANCE_NOT_CHANGED);
-//        assertBalanceEquals(secondUser, balanceSecondUser, TEST_MESSAGE_BALANCE_NOT_CHANGED + "у чужого аккаунта");
-//    }
-//
-//    // ---------- NEGATIVE: невалидный тип accountId ----------
-//    public static Stream<Arguments> invalidAccountIdBodies() {
-//        return Stream.of(
-//                Arguments.of("\"abc\""),
-//                Arguments.of("null"),
-//                Arguments.of("[1, 2]"),
-//                Arguments.of("{\"x\": 1}")
-//        );
-//    }
-//
-//    @ParameterizedTest
-//    @MethodSource("invalidAccountIdBodies")
-//    public void depositWithInvalidAccountIdTypeDoesNotChangeBalanceTest(String accountIdJson) {
-//        depositRaw(firstUser, depositBody(accountIdJson, DEPOSIT_MIN.toString()),
-//                ResponseSpecs.fieldTypesAreInvalid()
-//        );
-//
-//        assertBalanceEquals(firstUser, beforeBalanceFirstUser, TEST_MESSAGE_BALANCE_NOT_CHANGED + "при невалидном accountId:" + accountIdJson);
-//    }
-//
-//    // ---------- NEGATIVE: невалидный тип amount ----------
-//    public static Stream<Arguments> invalidAmountBodies() {
-//        return Stream.of(
-//                Arguments.of("\"0.01\""),
-//                Arguments.of("\"abc\""),
-//                Arguments.of("[0.01]"),
-//                Arguments.of("null"),
-//                Arguments.of("{\"x\": 0.01}")
-//        );
-//    }
-//
-//    @ParameterizedTest
-//    @MethodSource("invalidAmountBodies")
-//    public void depositWithInvalidAmountTypeDoesNotChangeBalanceTest(String amountJson) {
-//        depositRaw(firstUser, depositBody(accountIdFirstUser.toString(), amountJson),
-//                ResponseSpecs.fieldTypesAreInvalid()
-//        );
-//        assertBalanceEquals(firstUser, beforeBalanceFirstUser, TEST_MESSAGE_BALANCE_NOT_CHANGED + "при невалидном amount: " + amountJson);
-//    }
-//
-//    // ---------- NEGATIVE: auth / body ----------
-//    @Test
-//    public void depositWithoutTokenTest() {
-//        addDeposit(RequestSpecs.invalidTokenSpec(null),
-//                ResponseSpecs.requestReturnsUnauthorizedRequest(),
-//                accountIdFirstUser,
-//                DEPOSIT_MAX
-//        );
-//    }
-//
-//    @Test
-//    public void depositWithFakeTokenTest() {
-//
-//        addDeposit(RequestSpecs.invalidTokenSpec(RandomData.getFakeToken()),
-//                ResponseSpecs.requestReturnsUnauthorizedRequest(),
-//                accountIdFirstUser,
-//                DEPOSIT_MAX
-//        );
-//    }
-//
-////    @Test
-////    public void depositWithoutBodyTest() {
-////        new AddDepositMoneyRequester(authUser(firstUser),
-////                ResponseSpecs.requestIsMalformed())
-////                .postNoBody();
-////    }
-//
-//    @Test
-//    public void depositWithExtraFieldsTest() {
-//        // лишние поля должны игнорироваться, запрос валиден и баланс растёт
-//        String body = """
-//                {
-//                    "accountId": %d,
-//                        "amount": %s,
-//                        "hack": "yes"
-//                }
-//                """.formatted(accountIdFirstUser, DEPOSIT_MAX);
-//        depositRaw(firstUser, body, ResponseSpecs.requestReturnsOK());
-//        assertBalanceEquals(firstUser, beforeBalanceFirstUser.add(DEPOSIT_MAX), TEST_MESSAGE_BALANCE_CHANGED + DEPOSIT_MAX);
-//    }
+        assertThat(customerClient.getAccountById(user.username(),
+                user.accounts().getFirst().id()).balance()
+        ).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Data(users = {
+            @User(username = "first", accounts = @Account(balance = DEPOSIT_MAX_STR)),
+            @User(username = "second", randomAccounts = 1)
+    })
+    @ApiLogin
+    @Test
+    public void depositToForeignAccountDoesNotAffectBalancesTest(TestData data) {
+        CreateUserJsonResponse first = data.requireByUsername("first");
+        CreateUserJsonResponse second = data.requireByUsername("second");
+        accountsClient.performDepositExpectingError(first.username(),
+                new DepositJsonRequest(
+                        second.accounts().getFirst().id(),
+                        DEPOSIT_MAX),
+                HttpStatus.SC_FORBIDDEN,
+                ApiErrors.KEY_MESSAGE,
+                ApiErrors.Auth.UNAUTHORIZED_ACCOUNT
+        );
+
+        Assertions.assertAll(() -> assertThat(customerClient.getAccountById(first.username(),
+                        first.accounts().getFirst().id()).balance()
+                ).isEqualByComparingTo(DEPOSIT_MAX),
+
+                () -> assertThat(customerClient.getAccountById(second.username(),
+                        second.accounts().getFirst().id()).balance()
+                ).isEqualByComparingTo(BigDecimal.ZERO)
+        );
+    }
 }

@@ -1,25 +1,14 @@
 package jupiter.extension;
 
-import api.core.AuthContext;
 import jupiter.annotation.Data;
 import models.TestData;
-import models.rest.AdminConstants;
-import models.rest.CreateUserJsonResponse;
-import models.rest.UserRole;
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
-import service.AdminClient;
-import service.AuthClient;
-import service.api.AdminApiClient;
-import service.api.AuthApiClient;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
-public class TestDataExtension implements BeforeEachCallback, SuiteExtension, ParameterResolver {
+public class TestDataExtension implements BeforeEachCallback, ParameterResolver {
     public static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(TestDataExtension.class);
-    private final AdminClient adminClient = new AdminApiClient();
-    private final AuthClient authClient = new AuthApiClient();
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
@@ -28,19 +17,6 @@ public class TestDataExtension implements BeforeEachCallback, SuiteExtension, Pa
                     setContent(new TestData(new ArrayList<>()));
                 });
     }
-
-    @Override
-    public void afterSuite() {
-        authClient.authUser(AdminConstants.LOGIN, AdminConstants.PASSWORD);
-        for (CreateUserJsonResponse user : adminClient.getUsers().stream()
-                .filter(user -> !user.role().equals(UserRole.ADMIN))
-                .toList()
-        ) {
-            adminClient.deleteUserById(user.id());
-        }
-        AuthContext.clear();
-    }
-
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {

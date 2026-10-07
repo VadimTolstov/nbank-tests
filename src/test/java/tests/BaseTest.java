@@ -139,17 +139,17 @@ public abstract class BaseTest {
 //        }
 //    }
 
-    protected void transfer(RequestSpecification spec,
-                            ResponseSpecification response,
-                            TransferJson request) {
-        new TransferRequester(spec, response).post(request);
-    }
-
-    protected void transfer(CreateUserJsonRequest user,
-                            ResponseSpecification response,
-                            TransferJson request) {
-        transfer(authUser(user), response, request);
-    }
+//    protected void transfer(RequestSpecification spec,
+//                            ResponseSpecification response,
+//                            TransferJson request) {
+//        new TransferRequester(spec, response).post(request);
+//    }
+//
+//    protected void transfer(CreateUserJsonRequest user,
+//                            ResponseSpecification response,
+//                            TransferJson request) {
+//        transfer(authUser(user), response, request);
+//    }
 
     protected String depositBody(String accountIdJson, String amountJson) {
         return """

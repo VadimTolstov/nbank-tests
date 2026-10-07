@@ -19,7 +19,4 @@ public interface Config {
 
     default @NotNull String apiBasePathV1() { return "/api/v1"; }
 
-    default String defaultPassword() {
-        return "Vadim123!";
-    }
 }

@@ -1,6 +1,8 @@
 package jupiter.extension;
 
+import api.core.AuthContext;
 import generators.RandomData;
+import jupiter.UserRegistry;
 import jupiter.annotation.Account;
 import jupiter.annotation.Data;
 import jupiter.annotation.User;
@@ -20,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class UserExtension implements BeforeEachCallback, ParameterResolver {
+public class UserExtension implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
 
     public static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(UserExtension.class);
 
@@ -68,25 +70,33 @@ public class UserExtension implements BeforeEachCallback, ParameterResolver {
         return created;
     }
 
-    /** Пользователь, созданный из @User-аннотации — с метаданными счетов. */
+    /**
+     * Пользователь, созданный из @User-аннотации — с метаданными счетов.
+     */
     private CreateUserJsonResponse createWithMetadata(UserJson draft, User userAnno) {
-        return adminClient.createUsers(draft)
+        CreateUserJsonResponse created = adminClient.createUsers(draft)
                 .toBuilder()
                 .password(draft.password())
                 .randomAccounts(userAnno.randomAccounts())
                 .accountMetas(toMetas(userAnno.accounts()))
                 .build();
+        UserRegistry.register(created);
+        return created;
     }
 
-    /** Случайный пользователь — без счёт-метаданных. */
+    /**
+     * Случайный пользователь — без счёт-метаданных.
+     */
     private CreateUserJsonResponse createRandom() {
         UserJson draft = buildRandomUser();
-        return adminClient.createUsers(draft)
+        CreateUserJsonResponse created = adminClient.createUsers(draft)
                 .toBuilder()
                 .password(draft.password())
                 .randomAccounts(0)
                 .accountMetas(new ArrayList<>())
                 .build();
+        UserRegistry.register(created);
+        return created;
     }
 
     private List<CreateUserJsonResponse.AccountMeta> toMetas(Account[] accounts) {
@@ -111,6 +121,26 @@ public class UserExtension implements BeforeEachCallback, ParameterResolver {
                 RandomData.getPassword(),
                 UserRole.USER
         );
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+        try {
+            List<CreateUserJsonResponse> users = UserRegistry.created();
+            if (!users.isEmpty()){
+                authClient.authUser(AdminConstants.LOGIN, AdminConstants.PASSWORD);
+                for (CreateUserJsonResponse user : users) {
+                    try {
+                        adminClient.deleteUserById(user.id());
+                    } catch (Exception e) {
+                        System.err.println("Failed to delete user " + user.username() + ": " + e.getMessage());
+                    }
+                }
+            }
+        } finally {
+            UserRegistry.clear();
+            AuthContext.clear();
+        }
     }
 
     @Override

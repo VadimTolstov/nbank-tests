@@ -13,7 +13,7 @@ import service.api.AdminApiClient;
 import service.api.AuthApiClient;
 
 @RestTest
-public class LoginUserTest extends BaseTest {
+public class LoginUserTest {
     private final AdminClient adminClient = new AdminApiClient();
     private final AuthClient authClient = new AuthApiClient();
 

@@ -1,28 +1,33 @@
-//package tests;
-//
-//import generators.RandomData;
-//import io.restassured.specification.RequestSpecification;
-//import io.restassured.specification.ResponseSpecification;
-//import models.rest.TransferJson;
-//import models.rest.CreateUserJsonRequest;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.params.ParameterizedTest;
-//import org.junit.jupiter.params.provider.Arguments;
-//import org.junit.jupiter.params.provider.MethodSource;
-//import org.junit.jupiter.params.provider.ValueSource;
-//import specs.RequestSpecs;
-//import specs.ResponseSpecs;
-//
-//import java.math.BigDecimal;
-//import java.util.stream.Stream;
-//
-//import static api.ApiLimits.DEPOSIT_MAX;
-//import static org.junit.jupiter.api.Assertions.assertEquals;
-//import static utils.Repeat.*;
-//
-//public class TransferTest extends BaseTest {
-//
+package tests;
+
+import api.ApiLimits;
+import jupiter.annotation.Account;
+import jupiter.annotation.ApiLogin;
+import jupiter.annotation.Data;
+import jupiter.annotation.User;
+import jupiter.annotation.meta.RestTest;
+import models.TestData;
+import models.rest.CreateUserJsonResponse;
+import models.rest.TransferJson;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import service.AccountsClient;
+import service.CustomerClient;
+import service.api.AccountsApiClient;
+import service.api.CustomerApiClient;
+
+import java.math.BigDecimal;
+import java.util.stream.Stream;
+
+import static api.ApiLimits.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+@RestTest
+public class TransferTest {
+    private final AccountsClient accountsClient = new AccountsApiClient();
+    private final CustomerClient customerClient = new CustomerApiClient();
 //    private CreateUserJsonRequest firstUser;
 //    private Long senderAccountIdFirstUser;
 //
@@ -58,30 +63,51 @@
 //                        .compareTo(getBalance(receiver, receiverAccountId)),
 //                "Получателю должно зачислиться " + amount);
 //    }
-//
-//    // ---------- setup ----------
-//
+
+    // ---------- setup ----------
+
 //    @BeforeEach
 //    public void setUp() {
 //        firstUser = freshUser();
 //        createUser(firstUser);
 //        senderAccountIdFirstUser = createAccount(firstUser).getId();
 //    }
-//
-//    // ---------- POSITIVE ----------
-//
-//    @ParameterizedTest
-//    @ValueSource(strings = {"0.01", "10000", "9999.99"})
-//    public void transferValidAmountToSelfAccountTest(String amount) {
-//        BigDecimal deposit = new BigDecimal(amount);
-//        fillBalance(firstUser, senderAccountIdFirstUser, deposit);
-//
-//        Long selfAccountIdFirstUser = createAccount(firstUser).getId();
-//
-//        assertSuccessfulTransfer(firstUser, senderAccountIdFirstUser,
-//                firstUser, selfAccountIdFirstUser, deposit);
-//    }
-//
+
+    // ---------- POSITIVE ----------
+    static Stream<Arguments> validTransferAmounts() {
+        BigDecimal transferBeforeMinAmount = TRANSFER_MIN.add(MINIMUM_STEP_TRANSFER);
+        BigDecimal transferAfterMaxAmount = TRANSFER_MAX.subtract(MINIMUM_STEP_TRANSFER);
+
+        return Stream.of(
+                Arguments.of(TRANSFER_MIN, transferAfterMaxAmount),
+                Arguments.of(transferBeforeMinAmount, TRANSFER_MAX.subtract(transferBeforeMinAmount)),
+                Arguments.of(transferAfterMaxAmount, TRANSFER_MIN),
+                Arguments.of(TRANSFER_MAX, TRANSFER_MAX.subtract(TRANSFER_MAX))
+        );
+    }
+
+    @Data(
+            users = {
+                    @User(username = "user1", accounts = {@Account(balance = ApiLimits.TRANSFER_MAX_STR)}),
+                    @User(username = "user2", randomAccounts = 1)
+            }
+    )
+    @ApiLogin
+    @ParameterizedTest
+    @MethodSource("validTransferAmounts")
+    public void transferValidAmountToSelfAccountTest(BigDecimal amountSent, BigDecimal remainingAmount, TestData data) {
+        CreateUserJsonResponse firstUser = data.requireByUsername("user1");
+        CreateUserJsonResponse secondUser = data.requireByUsername("user2");
+
+        Long firstAccountId = firstUser.accounts().getFirst().id();
+        Long secondAccountId = secondUser.accounts().getFirst().id();
+        accountsClient.transfer(firstUser.username(), new TransferJson(firstAccountId, secondAccountId, amountSent, ""));
+        assertAll(
+                () -> assertThat(customerClient.getAccountById(firstUser.username(), firstAccountId).balance()).isEqualByComparingTo(remainingAmount),
+                () -> assertThat(customerClient.getAccountById(secondUser.username(), secondAccountId).balance()).isEqualByComparingTo(amountSent)
+        );
+    }
+
 //    /**
 //     * Перевод 0.02 не себе при балансе 0.03.
 //     */
@@ -286,4 +312,4 @@
 //        assertBalanceUnchanged(firstUser, selfAccountIdFirstUser, receiverBefore,
 //                caseName + ": баланс получателя не должен измениться");
 //    }
-//}
+}
