@@ -1,8 +1,6 @@
 package tests;
 
 import api.ApiErrors;
-import generators.RandomData;
-import io.restassured.specification.RequestSpecification;
 import jupiter.annotation.ApiLogin;
 import jupiter.annotation.User;
 import jupiter.annotation.meta.RestTest;
@@ -16,7 +14,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import service.api.CustomerApiClient;
-import specs.RequestSpecs;
 
 import java.util.stream.Stream;
 

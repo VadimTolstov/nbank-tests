@@ -9,8 +9,7 @@ import config.Config;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.Response;
 import lombok.NonNull;
-import models.rest.UserJson;
-import models.rest.UserRole;
+import models.rest.CreateUserJsonRequest;
 import service.AuthClient;
 
 public class AuthApiClient implements AuthClient, RequestExecutor {
@@ -32,7 +31,7 @@ public class AuthApiClient implements AuthClient, RequestExecutor {
         Response response = postForResponse(
                 restClient.request(),
                 AuthEndpoints.AUTH_USER,
-                UserJson.builder().username(username).password(password).build(),
+                CreateUserJsonRequest.builder().username(username).password(password).build(),
                 ResponseSpecs.OK
         );
 

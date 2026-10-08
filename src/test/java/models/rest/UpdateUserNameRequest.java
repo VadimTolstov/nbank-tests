@@ -1,12 +1,11 @@
 package models.rest;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class UpdateUserNameRequest extends BaseModel {
-    private String name;
+@Builder(toBuilder = true)
+public record UpdateUserNameRequest(
+        @JsonProperty("name")
+        String name
+) {
 }

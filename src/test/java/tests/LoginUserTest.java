@@ -4,7 +4,7 @@ import generators.RandomModelGenerator;
 import jupiter.annotation.AdminApiLogin;
 import jupiter.annotation.meta.RestTest;
 import models.rest.AdminConstants;
-import models.rest.UserJson;
+import models.rest.CreateUserJsonRequest;
 import models.rest.UserRole;
 import org.junit.jupiter.api.Test;
 import service.AdminClient;
@@ -19,14 +19,14 @@ public class LoginUserTest {
 
     @Test
     public void adminCanGenerateAuthTokenTest() {
-        UserJson user = new UserJson(AdminConstants.LOGIN, AdminConstants.PASSWORD, UserRole.ADMIN);
+        CreateUserJsonRequest user = new CreateUserJsonRequest(AdminConstants.LOGIN, AdminConstants.PASSWORD, UserRole.ADMIN);
         authClient.authUser(user.username(), user.password());
     }
 
     @AdminApiLogin
     @Test
     public void userCanGenerateAuthTokenTest() {
-        UserJson user = RandomModelGenerator.generate(UserJson.class);
+        CreateUserJsonRequest user = RandomModelGenerator.generate(CreateUserJsonRequest.class);
         adminClient.createUsers(user);
 
         authClient.authUser(user.username(), user.password());

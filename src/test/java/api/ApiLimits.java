@@ -14,6 +14,7 @@ public final class ApiLimits {
     public static final String TRANSFER_MAX_STR = "10000.00";
     public static final String TRANSFER_MIN_STR = "0.01";
     public static final String MINIMUM_STEP_TRANSFER_STR = "0.01";
+    public static final String TRANSFER_20000_STR = "20000.00";
 
     // ---------- BigDecimal для рантайм-логики ----------
     public static final BigDecimal DEPOSIT_MAX = new BigDecimal(DEPOSIT_MAX_STR);
@@ -23,4 +24,5 @@ public final class ApiLimits {
     public static final BigDecimal TRANSFER_MAX = new BigDecimal(TRANSFER_MAX_STR);
     public static final BigDecimal TRANSFER_MIN = new BigDecimal(TRANSFER_MIN_STR);
     public static final BigDecimal MINIMUM_STEP_TRANSFER = new BigDecimal(MINIMUM_STEP_TRANSFER_STR);
+    public static final BigDecimal TRANSFER_20000 = new BigDecimal(TRANSFER_20000_STR);
 }

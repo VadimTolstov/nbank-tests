@@ -8,9 +8,9 @@ public interface AccountsClient {
     /**
      * Создаёт аккаунт.
      *
-     * @param userJson данные пользователя.
+     * @param createUserJsonRequest данные пользователя.
      */
-    CustomerAccountJson createAccount(@NonNull UserJson userJson);
+    CustomerAccountJson createAccount(@NonNull CreateUserJsonRequest createUserJsonRequest);
 
     /**
      * Переводит деньги с одного аккаунта на другой аккаунт.

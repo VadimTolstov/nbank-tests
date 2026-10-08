@@ -6,7 +6,7 @@ import jupiter.annotation.User;
 import models.rest.CreateUserJsonResponse;
 import models.rest.CustomerAccountJson;
 import models.rest.DepositJsonRequest;
-import models.rest.UserJson;
+import models.rest.CreateUserJsonRequest;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.support.AnnotationSupport;
@@ -38,18 +38,18 @@ public class AccountExtension implements BeforeEachCallback {
     }
 
     private void processAccounts(CreateUserJsonResponse userResponse) {
-        UserJson userJson = new UserJson(
+        CreateUserJsonRequest createUserJsonRequest = new CreateUserJsonRequest(
                 userResponse.username(),
                 userResponse.password(),
                 userResponse.role()
         );
 
         for (int i = 0; i < userResponse.randomAccounts(); i++) {
-            userResponse.accounts().add(accountsClient.createAccount(userJson));
+            userResponse.accounts().add(accountsClient.createAccount(createUserJsonRequest));
         }
 
         for (CreateUserJsonResponse.AccountMeta meta : userResponse.accountMetas()) {
-            CustomerAccountJson account = accountsClient.createAccount(userJson);
+            CustomerAccountJson account = accountsClient.createAccount(createUserJsonRequest);
             userResponse.accounts().add(account);
 
             BigDecimal total = new BigDecimal(meta.balance());
@@ -57,7 +57,7 @@ public class AccountExtension implements BeforeEachCallback {
                 BigDecimal left = total;
                 while (left.signum() > 0) {
                     BigDecimal part = left.min(ApiLimits.DEPOSIT_MAX);
-                    accountsClient.deposit(userJson.username(), new DepositJsonRequest(account.id(), part));
+                    accountsClient.deposit(createUserJsonRequest.username(), new DepositJsonRequest(account.id(), part));
                     left = left.subtract(part);
                 }
             }

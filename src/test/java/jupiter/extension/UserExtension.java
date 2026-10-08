@@ -8,7 +8,7 @@ import jupiter.annotation.Data;
 import jupiter.annotation.User;
 import models.rest.AdminConstants;
 import models.rest.CreateUserJsonResponse;
-import models.rest.UserJson;
+import models.rest.CreateUserJsonRequest;
 import models.rest.UserRole;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.extension.*;
@@ -73,7 +73,7 @@ public class UserExtension implements BeforeEachCallback, AfterEachCallback, Par
     /**
      * Пользователь, созданный из @User-аннотации — с метаданными счетов.
      */
-    private CreateUserJsonResponse createWithMetadata(UserJson draft, User userAnno) {
+    private CreateUserJsonResponse createWithMetadata(CreateUserJsonRequest draft, User userAnno) {
         CreateUserJsonResponse created = adminClient.createUsers(draft)
                 .toBuilder()
                 .password(draft.password())
@@ -88,7 +88,7 @@ public class UserExtension implements BeforeEachCallback, AfterEachCallback, Par
      * Случайный пользователь — без счёт-метаданных.
      */
     private CreateUserJsonResponse createRandom() {
-        UserJson draft = buildRandomUser();
+        CreateUserJsonRequest draft = buildRandomUser();
         CreateUserJsonResponse created = adminClient.createUsers(draft)
                 .toBuilder()
                 .password(draft.password())
@@ -107,16 +107,16 @@ public class UserExtension implements BeforeEachCallback, AfterEachCallback, Par
                 .toList();
     }
 
-    private UserJson buildUser(User userAnno) {
-        return new UserJson(
+    private CreateUserJsonRequest buildUser(User userAnno) {
+        return new CreateUserJsonRequest(
                 "".equals(userAnno.username()) ? RandomData.getUsername() : userAnno.username(),
                 "".equals(userAnno.password()) ? RandomData.getPassword() : userAnno.password(),
                 UserRole.USER
         );
     }
 
-    private UserJson buildRandomUser() {
-        return new UserJson(
+    private CreateUserJsonRequest buildRandomUser() {
+        return new CreateUserJsonRequest(
                 RandomData.getUsername(),
                 RandomData.getPassword(),
                 UserRole.USER

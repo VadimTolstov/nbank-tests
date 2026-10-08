@@ -6,7 +6,7 @@ import jupiter.annotation.meta.RestTest;
 import models.comparison.ModelAssertions;
 import models.rest.CreateUserJsonResponse;
 import models.rest.CustomerAccountJson;
-import models.rest.UserJson;
+import models.rest.CreateUserJsonRequest;
 import org.junit.jupiter.api.Test;
 import service.AccountsClient;
 import service.CustomerClient;
@@ -23,7 +23,7 @@ public class CreateAccountTest {
     @Test
     public void userCanCreateAccountTest(CreateUserJsonResponse user) {
         CustomerAccountJson accountResponse = accountsClient.createAccount(
-                new UserJson(user.username(),
+                new CreateUserJsonRequest(user.username(),
                         user.password(),
                         user.role())
         );

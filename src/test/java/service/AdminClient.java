@@ -2,7 +2,7 @@ package service;
 
 import lombok.NonNull;
 import models.rest.CreateUserJsonResponse;
-import models.rest.UserJson;
+import models.rest.CreateUserJsonRequest;
 
 import java.util.List;
 
@@ -34,10 +34,10 @@ public interface AdminClient {
     /**
      * Создаёт пользователя.
      *
-     * @param userJson данные нового пользователя.
+     * @param createUserJsonRequest данные нового пользователя.
      * @return создает пользователя.
      */
-    CreateUserJsonResponse createUsers(@NonNull UserJson userJson);
+    CreateUserJsonResponse createUsers(@NonNull CreateUserJsonRequest createUserJsonRequest);
 
     /**
      * Удалить пользователя по id пользователя.

@@ -10,7 +10,7 @@ import io.restassured.filter.log.LogDetail;
 import lombok.NonNull;
 import models.rest.AdminConstants;
 import models.rest.CreateUserJsonResponse;
-import models.rest.UserJson;
+import models.rest.CreateUserJsonRequest;
 import org.jetbrains.annotations.Nullable;
 import service.AdminClient;
 
@@ -59,11 +59,11 @@ public class AdminApiClient implements AdminClient, RequestExecutor {
     }
 
     @Override
-    public CreateUserJsonResponse createUsers(@NonNull UserJson userJson) {
+    public CreateUserJsonResponse createUsers(@NonNull CreateUserJsonRequest createUserJsonRequest) {
         return post(
                 restClient.authRequest(AdminConstants.LOGIN),
                 AdminEndpoints.CREATE_USER,
-                userJson,
+                createUserJsonRequest,
                 ResponseSpecs.CREATED,
                 CreateUserJsonResponse.class
         );
@@ -78,13 +78,13 @@ public class AdminApiClient implements AdminClient, RequestExecutor {
         );
     }
 
-    public void createUsersExpectingError(@NonNull UserJson userJson,
+    public void createUsersExpectingError(@NonNull CreateUserJsonRequest createUserJsonRequest,
                                           @NonNull String errorWithField,
                                           @NonNull String message) {
         executeVoid(
                 restClient.authRequest(AdminConstants.LOGIN),
                 ResponseSpecs.errorWithField(400, errorWithField, message),
-                s -> s.body(userJson).post(AdminEndpoints.CREATE_USER)
+                s -> s.body(createUserJsonRequest).post(AdminEndpoints.CREATE_USER)
         );
     }
 }

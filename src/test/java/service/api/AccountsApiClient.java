@@ -8,6 +8,7 @@ import config.Config;
 import io.restassured.filter.log.LogDetail;
 import lombok.NonNull;
 import models.rest.*;
+import org.apache.http.HttpStatus;
 import service.AccountsClient;
 
 public class AccountsApiClient implements AccountsClient, RequestExecutor {
@@ -25,10 +26,10 @@ public class AccountsApiClient implements AccountsClient, RequestExecutor {
     }
 
     @Override
-    public CustomerAccountJson createAccount(@NonNull UserJson userJson) {
-        return post(restClient.authRequest(userJson.username()),
+    public CustomerAccountJson createAccount(@NonNull CreateUserJsonRequest createUserJsonRequest) {
+        return post(restClient.authRequest(createUserJsonRequest.username()),
                 AccountsEndpoints.CREATE_ACCOUNT,
-                userJson,
+                createUserJsonRequest,
                 ResponseSpecs.CREATED,
                 CustomerAccountJson.class
         );
@@ -41,6 +42,17 @@ public class AccountsApiClient implements AccountsClient, RequestExecutor {
                 transferJson,
                 ResponseSpecs.OK,
                 TransferJson.class
+        );
+    }
+
+    public void performTransferExpectingError(@NonNull String username,
+                                             @NonNull TransferJson transferJson,
+                                             @NonNull String errorWithField,
+                                             @NonNull String message) {
+        executeVoid(
+                restClient.authRequest(username),
+                ResponseSpecs.errorWithField(HttpStatus.SC_BAD_REQUEST, errorWithField, message),
+                s -> s.body(transferJson).post(AccountsEndpoints.TRANSFER_MONEY)
         );
     }
 

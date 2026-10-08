@@ -1,18 +1,21 @@
 package models.rest;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import generators.GeneratingRule;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder(toBuilder = true)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class CreateUserJsonRequest extends BaseModel {
-    private String username;
-    private String password;
-    private UserRole role;
+public record CreateUserJsonRequest(
+        @GeneratingRule(regex = "^[A-Za-z0-9]{3,15}$")
+        @JsonProperty("username")
+        String username,
+        @GeneratingRule(regex = "^[A-Z]{3}[a-z]{4}[0-9]{3}[$%&]{2}$")
+        @JsonProperty("password")
+        String password,
+        @GeneratingRule(regex = "^USER$")
+        @JsonProperty("role")
+        UserRole role
+) {
 }
