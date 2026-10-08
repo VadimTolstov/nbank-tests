@@ -16,7 +16,7 @@ public enum LocalConfig implements Config {
     }
 
     @Override
-    public @NotNull String frontUrl() {
+    public @NotNull String nbankUrl() {
         return serverUrl("4111");
     }
 }
