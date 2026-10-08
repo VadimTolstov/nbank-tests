@@ -202,8 +202,7 @@ src/test/java/
 src/test/resources/
 ├── META-INF/
 │   └── services/
-│       ├── org.junit.jupiter.api.extension.Extension             # AuthExtension и др.
-│       └── org.junit.platform.launcher.LauncherSessionListener   # CleanupListener
+│       └── org.junit.jupiter.api.extension.Extension             # AuthExtension и др.
 ├── config.properties
 ├── http-request.ftl                     # Allure-шаблон запроса
 ├── http-response.ftl                    # Allure-шаблон ответа
