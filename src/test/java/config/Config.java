@@ -13,8 +13,10 @@ public interface Config {
     @NotNull
     String nbankUrl();
 
-
     default @NotNull String url(@NonNull String type, @NonNull String host, @NonNull String port) {
         return String.format("%s://%s:%s/", type, host, port);
     }
+
+    default @NotNull String apiBasePathV1() { return "/api/v1"; }
+
 }

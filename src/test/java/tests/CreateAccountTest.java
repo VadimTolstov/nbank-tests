@@ -1,25 +1,34 @@
 package tests;
 
-import models.CreateUserResponse;
-import models.CustomerAccount;
-import models.UserRequest;
-import org.junit.jupiter.api.Assertions;
+import jupiter.annotation.ApiLogin;
+import jupiter.annotation.User;
+import jupiter.annotation.meta.RestTest;
+import models.comparison.ModelAssertions;
+import models.rest.CreateUserJsonResponse;
+import models.rest.CustomerAccountJson;
+import models.rest.CreateUserJsonRequest;
 import org.junit.jupiter.api.Test;
+import service.AccountsClient;
+import service.CustomerClient;
+import service.api.AccountsApiClient;
+import service.api.CustomerApiClient;
 
-import java.math.BigDecimal;
+@RestTest
+public class CreateAccountTest {
+    private final AccountsClient accountsClient = new AccountsApiClient();
+    private final CustomerClient customerClient = new CustomerApiClient();
 
-public class CreateAccountTest extends BaseTest {
-
+    @User
+    @ApiLogin
     @Test
-    public void userCanCreateAccountTest() {
-        UserRequest userRequest = freshUser();
-        CreateUserResponse user = createUser(userRequest);
-        CustomerAccount account = createAccount(userRequest);
+    public void userCanCreateAccountTest(CreateUserJsonResponse user) {
+        CustomerAccountJson accountResponse = accountsClient.createAccount(
+                new CreateUserJsonRequest(user.username(),
+                        user.password(),
+                        user.role())
+        );
 
-        softly.assertThat(account)
-                .usingRecursiveComparison()
-                .withComparatorForType(BigDecimal::compareTo, BigDecimal.class)
-                .isEqualTo(getAccountById(user, account.getId()));
-        // запросить все аккаунты пользователя и проверить, что наш аккаунт там
+        CustomerAccountJson accountById = customerClient.getAccountById(user.username(), accountResponse.id());
+        ModelAssertions.assertThatModels(accountResponse, accountById).match();
     }
 }

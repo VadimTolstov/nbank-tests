@@ -1,42 +1,30 @@
 package tests;
 
-import generators.RandomData;
-import io.restassured.specification.RequestSpecification;
-import models.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import api.ApiErrors;
+import jupiter.annotation.ApiLogin;
+import jupiter.annotation.User;
+import jupiter.annotation.meta.RestTest;
+import models.comparison.ModelAssertions;
+import models.rest.CreateUserJsonResponse;
+import models.rest.CustomerProfileJsonResponse;
+import models.rest.UpdateUserNameRequest;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import requests.AdminCreateUserRequester;
-import requests.UpdateUserNameRequester;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
+import service.api.CustomerApiClient;
 
 import java.util.stream.Stream;
 
-public class UpdateUserNameTest extends BaseTest {
+@RestTest
+public class UpdateUserNameTest {
+    private final CustomerApiClient customerClient = new CustomerApiClient();
 
-    private UserRequest createUser;
-
-    @BeforeEach
-    public void setUp() {
-        createUser = UserRequest.builder()
-                .username(RandomData.getUsername())
-                .password(RandomData.getPassword())
-                .role(UserRole.USER)
-                .build();
-
-        new AdminCreateUserRequester(RequestSpecs.adminSpec(),
-                ResponseSpecs.entityWasCreated())
-                .post(createUser)
-                .extract()
-                .as(CreateUserResponse.class);
-    }
 
     // ---------- positives ----------
-
+    @User
+    @ApiLogin
     @ParameterizedTest
     @ValueSource(strings = {
             "I I",
@@ -44,93 +32,50 @@ public class UpdateUserNameTest extends BaseTest {
             "Самый Главный",
             "JohnJohnJohn SmithSmithSmith"
     })
-    public void updateNameWithValidValueTest(String name) {
-        updateProfileName(createUser, name, ResponseSpecs.requestReturnsOK());
+    public void updateNameWithValidValueTest(String name, CreateUserJsonResponse user) {
+        customerClient.updateUserProfileName(
+                user.username(),
+                new UpdateUserNameRequest(name)
+        );
 
-        GetUserProfileResponse profile = fetchProfile(createUser);
-
-        softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
-        softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());
-        softly.assertThat(profile.getName()).isEqualTo(name);
+        CustomerProfileJsonResponse profile = customerClient.getProfile(user.username());
+        Assertions.assertThat(profile.name()).isEqualTo(name);
     }
 
     // ---------- negatives: invalid name ----------
-
     public static Stream<Arguments> invalidNames() {
         return Stream.of(
-                Arguments.of("John"),
-                Arguments.of("John John John "),
-                Arguments.of("John  John"),
-                Arguments.of(" John John"),
-                Arguments.of("John-John"),
-                Arguments.of("John 1"),
-                Arguments.of("        "),
-                Arguments.of(""),
-                Arguments.of("John  "),
-                Arguments.of("John John1"),
-                Arguments.of("John John%"),
-                Arguments.of("[\"John\",\"Smith\"]"),
-                Arguments.of("123"),
-                Arguments.of("John\tSmith")
+                Arguments.of("John", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("John John John ", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("John  John", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of(" John John", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("John-John", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("John 1", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("        ", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("John  ", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("John John1", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("John John%", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("[\"John\",\"Smith\"]", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST),
+                Arguments.of("123", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("John\tSmith", ApiErrors.KEY_ERROR, ApiErrors.BAD_REQUEST)
         );
     }
 
-    @ParameterizedTest
+    @User
+    @ApiLogin
+    @ParameterizedTest()
     @MethodSource("invalidNames")
-    public void updateNameWithInvalidValueTest(String name) {
-        updateProfileName(createUser, name, ResponseSpecs.nameIsInvalid());
-
-        GetUserProfileResponse profile = fetchProfile(createUser);
-
-        softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
-        softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());
-        softly.assertThat(profile.getName()).isNull();
-    }
-
-    // ---------- negatives: bad body ----------
-    public static Stream<Arguments> invalidRawBodies() {
-        return Stream.of(
-                Arguments.of("{\"name\": 12 3}"),
-                Arguments.of("{\"name\": [\"John\", \"Smith\"]}")
+    public void updateNameWithInvalidValueTest(String name, String errorKey, String errorValue, CreateUserJsonResponse user) {
+        String rawBody = "{\"name\":%s}".formatted(name);
+        customerClient.updateNameExpectingError(
+                user.username(),
+                rawBody,
+                errorKey,
+                errorValue
         );
-    }
 
-    @ParameterizedTest
-    @MethodSource("invalidRawBodies")
-    public void updateNameWithInvalidBodyTest(String rawBody) {
-        updateProfileRaw(createUser, rawBody, ResponseSpecs.requestIsMalformed());
-
-        GetUserProfileResponse profile = fetchProfile(createUser);
-
-        softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
-        softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());
-        softly.assertThat(profile.getName()).isNull();
-    }
-
-    @Test
-    public void updateNameWithoutBodyTest() {
-        updateProfileNoBody(createUser, ResponseSpecs.requestIsMalformed());
-
-        GetUserProfileResponse profile = fetchProfile(createUser);
-
-        softly.assertThat(profile.getUsername()).isEqualTo(createUser.getUsername());
-        softly.assertThat(profile.getRole()).isEqualTo(createUser.getRole());
-        softly.assertThat(profile.getName()).isNull();
-    }
-
-    // ---------- negatives: auth ----------
-    public static Stream<Arguments> invalidAuthSpecs() {
-        return Stream.of(
-                Arguments.of(RequestSpecs.invalidTokenSpec(null), "без токена"),
-                Arguments.of(RequestSpecs.invalidTokenSpec(RandomData.getFakeToken()), "поддельный токен")
-        );
-    }
-
-    @ParameterizedTest
-    @MethodSource("invalidAuthSpecs")
-    public void updateNameWithInvalidAuthDoesNotTokenTest(RequestSpecification invalidSpec, String caseName) {
-        new UpdateUserNameRequester(invalidSpec,
-                ResponseSpecs.requestReturnsUnauthorizedRequest())
-                .put(new UpdateUserNameRequest(RandomData.getUsername()));
+        CustomerProfileJsonResponse profile = customerClient.getProfile(user.username());
+        ModelAssertions.assertThatModels(profile, user).match();
     }
 }
