@@ -11,6 +11,7 @@ import lombok.NonNull;
 import models.rest.AdminConstants;
 import models.rest.CreateUserJsonResponse;
 import models.rest.CreateUserJsonRequest;
+import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.Nullable;
 import service.AdminClient;
 
@@ -83,7 +84,7 @@ public class AdminApiClient implements AdminClient, RequestExecutor {
                                           @NonNull String message) {
         executeVoid(
                 restClient.authRequest(AdminConstants.LOGIN),
-                ResponseSpecs.errorWithField(400, errorWithField, message),
+                ResponseSpecs.errorWithField(HttpStatus.SC_BAD_REQUEST, errorWithField, message),
                 s -> s.body(createUserJsonRequest).post(AdminEndpoints.CREATE_USER)
         );
     }
