@@ -29,7 +29,7 @@ public record CreateUserJsonResponse(
         /** Явные счета с балансами. Не входит в JSON. */
         @JsonIgnore
         List<AccountMeta> accountMetas
-) {
+) implements BaseModel {
 
     public record AccountMeta(String balance) {
     }

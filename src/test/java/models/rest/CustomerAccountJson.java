@@ -15,5 +15,5 @@ public record CustomerAccountJson(
         String accountNumber,
         @JsonProperty("balance")
         BigDecimal balance
-) {
+) implements BaseModel {
 }

@@ -7,5 +7,5 @@ import lombok.Builder;
 public record UpdateUserNameRequest(
         @JsonProperty("name")
         String name
-) {
+) implements BaseModel {
 }

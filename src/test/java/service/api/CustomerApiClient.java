@@ -11,6 +11,7 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
 import lombok.NonNull;
 import models.rest.*;
+import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.Nullable;
 import service.CustomerClient;
 
@@ -72,7 +73,7 @@ public class CustomerApiClient implements CustomerClient, RequestExecutor {
                                           @NonNull String message) {
         executeVoid(
                 restClient.authRequest(username),
-                ResponseSpecs.errorWithField(400, errorField, message),
+                ResponseSpecs.errorWithField(HttpStatus.SC_BAD_REQUEST, errorField, message),
                 s -> s.contentType(ContentType.JSON)
                         .body(rawJson)
                         .put(CustomerEndpoints.UPDATE_PROFILE)

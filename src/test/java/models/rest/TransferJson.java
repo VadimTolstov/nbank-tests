@@ -18,7 +18,7 @@ public record TransferJson(
         BigDecimal amount,
         @JsonProperty("message")
         String message
-) {
+) implements BaseModel {
 
 }
 

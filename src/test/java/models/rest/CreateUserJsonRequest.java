@@ -17,5 +17,5 @@ public record CreateUserJsonRequest(
         @GeneratingRule(regex = "^USER$")
         @JsonProperty("role")
         UserRole role
-) {
+) implements BaseModel {
 }

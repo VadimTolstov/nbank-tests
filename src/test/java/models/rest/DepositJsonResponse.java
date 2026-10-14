@@ -18,5 +18,5 @@ public record DepositJsonResponse(
         BigDecimal depositAmount,
         @JsonProperty("transactionId")
         Long transactionId
-) {
+) implements BaseModel {
 }

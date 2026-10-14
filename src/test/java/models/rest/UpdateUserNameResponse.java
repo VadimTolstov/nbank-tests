@@ -15,5 +15,5 @@ public record UpdateUserNameResponse(
         String name,
         @JsonProperty("role")
         UserRole role
-) {
+) implements BaseModel {
 }

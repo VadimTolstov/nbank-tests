@@ -13,6 +13,6 @@ public record DepositJsonRequest(
         Long accountId,
         @JsonProperty("amount")
         BigDecimal amount
-) {
+) implements BaseModel {
 
 }
