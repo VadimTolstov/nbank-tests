@@ -24,7 +24,7 @@ public enum Endpoint {
     ADMIN_USERS_LIST(
             "admin/users",
             null,
-            CreateUserJsonResponse.class
+            null
     ),
 
     /**

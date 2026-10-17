@@ -1,12 +1,16 @@
 package tests;
 
-import generators.RandomModelGenerator;
+import api.spec.RequestSpecs;
+import api.spec.ResponseSpecs;
 import jupiter.annotation.AdminApiLogin;
 import jupiter.annotation.meta.RestTest;
 import models.rest.AdminConstants;
 import models.rest.CreateUserJsonRequest;
-import models.rest.UserRole;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import requests.skelethon.Endpoint;
+import requests.skelethon.requesters.AuthRequester;
+import requests.skelethon.step.AdminStep;
 import service.AdminClient;
 import service.AuthClient;
 import service.api.AdminApiClient;
@@ -19,16 +23,26 @@ public class LoginUserTest {
 
     @Test
     public void adminCanGenerateAuthTokenTest() {
-        CreateUserJsonRequest user = new CreateUserJsonRequest(AdminConstants.LOGIN, AdminConstants.PASSWORD, UserRole.ADMIN);
-        authClient.authUser(user.username(), user.password());
+        String token = new AuthRequester(
+                RequestSpecs.defaultSpec(),
+                Endpoint.AUTH_LOGIN,
+                ResponseSpecs.OK
+        ).login(AdminConstants.LOGIN, AdminConstants.PASSWORD);
+
+        Assertions.assertNotNull(token);
     }
 
     @AdminApiLogin
     @Test
     public void userCanGenerateAuthTokenTest() {
-        CreateUserJsonRequest user = RandomModelGenerator.generate(CreateUserJsonRequest.class);
-        adminClient.createUsers(user);
+        CreateUserJsonRequest user = AdminStep.createUser();
 
-        authClient.authUser(user.username(), user.password());
+        String token = new AuthRequester(
+                RequestSpecs.defaultSpec(),
+                Endpoint.AUTH_LOGIN,
+                ResponseSpecs.OK
+        ).login(user.username(), user.password());
+
+        Assertions.assertNotNull(token);
     }
 }

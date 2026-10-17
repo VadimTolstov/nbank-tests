@@ -1,34 +1,38 @@
 package tests;
 
 import api.ApiErrors;
+import api.spec.RequestSpecs;
+import api.spec.ResponseSpecs;
 import generators.RandomModelGenerator;
 import jupiter.annotation.AdminApiLogin;
 import jupiter.annotation.meta.RestTest;
 import models.comparison.ModelAssertions;
-import models.rest.CreateUserJsonResponse;
 import models.rest.CreateUserJsonRequest;
+import models.rest.CreateUserJsonResponse;
 import models.rest.UserRole;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import service.api.AdminApiClient;
+import requests.skelethon.Endpoint;
+import requests.skelethon.requesters.CrudRequester;
+import requests.skelethon.step.AdminStep;
 
 import java.util.stream.Stream;
 
 @RestTest
 public class CreateUserTest {
-    private final AdminApiClient adminClient = new AdminApiClient();
 
     @AdminApiLogin
     @Test
     public void adminCanCreateUserWithCorrectData() {
-        CreateUserJsonRequest createUserJsonRequest = RandomModelGenerator.generate(CreateUserJsonRequest.class);
-        CreateUserJsonResponse userResponse = adminClient.createUsers(createUserJsonRequest);
+        CreateUserJsonRequest userJsonRequest = RandomModelGenerator.generate(CreateUserJsonRequest.class);
 
-        ModelAssertions.assertThatModels(createUserJsonRequest, userResponse).match();
-        ModelAssertions.assertThatModels(adminClient.getUserById(userResponse.id()), userResponse).match();
+        CreateUserJsonResponse userJsonResponse = AdminStep.createUser(userJsonRequest);
+
+        ModelAssertions.assertThatModels(userJsonRequest, userJsonResponse).match();
+        ModelAssertions.assertThatModels(userJsonRequest, AdminStep.getUserById(userJsonResponse.id())).match();
     }
 
     public static Stream<Arguments> userInvalidData() {
@@ -44,8 +48,12 @@ public class CreateUserTest {
     @MethodSource("userInvalidData")
     @ParameterizedTest(name = "[{index}] username={0} → {4}")
     public void adminCanNotCreateUserWithInvalidData(String username, String password, UserRole role, String errorKey, String errorValue) {
-        adminClient.createUsersExpectingError(new CreateUserJsonRequest(username, password, role), errorKey, errorValue);
+        new CrudRequester(
+                RequestSpecs.adminSpec(),
+                Endpoint.ADMIN_USER,
+                ResponseSpecs.errorWithField(errorKey, errorValue)
+        ).post(new CreateUserJsonRequest(username, password, role));
 
-        Assertions.assertNull(adminClient.getUserByUsername(username));
+        Assertions.assertNull(AdminStep.getUserByUsername(username));
     }
 }

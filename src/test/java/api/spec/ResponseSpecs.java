@@ -98,6 +98,16 @@ public final class ResponseSpecs {
                 .build();
     }
 
+    public static ResponseSpecification errorWithField( String key, Object value) {
+        return new ResponseSpecBuilder()
+                .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
+                .expectBody(key, Matchers.anyOf(
+                        Matchers.equalTo(value),
+                        Matchers.hasItem(value)
+                ))
+                .build();
+    }
+
     /**
      * Ожидает код {@code status} и сообщение {@code message} в поле
      * {@code message} тела. Поле может быть как строкой, так и массивом.

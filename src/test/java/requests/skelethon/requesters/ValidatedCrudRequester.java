@@ -7,8 +7,6 @@ import requests.skelethon.Endpoint;
 import requests.skelethon.HttpRequest;
 import requests.skelethon.interfaces.CrudEndpointInterface;
 
-import java.util.List;
-
 public class ValidatedCrudRequester<T extends BaseModel> extends HttpRequest implements CrudEndpointInterface {
     private final CrudRequester crudRequester;
 
@@ -28,14 +26,8 @@ public class ValidatedCrudRequester<T extends BaseModel> extends HttpRequest imp
 
     @Override
     @SuppressWarnings("unchecked")
-    public T get() {
-        return (T) crudRequester.get().extract().as(endpoint.getResponseModel());
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public List<T> get(Long id) {
-        return (List<T>) crudRequester.get(id).extract().as(endpoint.getResponseModel());
+    public T get(Long id) {
+        return (T) crudRequester.get(id).extract().as(endpoint.getResponseModel());
     }
 
     @Override

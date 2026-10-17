@@ -31,16 +31,6 @@ public class CrudRequester extends HttpRequest implements CrudEndpointInterface 
     }
 
     @Override
-    public ValidatableResponse get() {
-        return given()
-                .spec(requestSpecification)
-                .get(endpoint.getEndpoint())
-                .then()
-                .assertThat()
-                .spec(responseSpecification);
-    }
-
-    @Override
     public ValidatableResponse get(Long id) {
         return withId(id)
                 .get(endpoint.getEndpoint())
@@ -72,7 +62,7 @@ public class CrudRequester extends HttpRequest implements CrudEndpointInterface 
      * Подставляет {@code {id}} в URL, только если шаблон его содержит.
      * Для endpoint'ов без {@code {id}} параметр игнорируется.
      */
-    private RequestSpecification withId(long id) {
+    private RequestSpecification withId(Long id) {
         RequestSpecification spec = given().spec(requestSpecification);
         if (endpoint.getEndpoint().contains("{id}")) {
             spec = spec.pathParam("id", id);
