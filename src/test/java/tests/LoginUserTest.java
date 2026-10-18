@@ -11,15 +11,9 @@ import org.junit.jupiter.api.Test;
 import requests.skelethon.Endpoint;
 import requests.skelethon.requesters.AuthRequester;
 import requests.skelethon.step.AdminStep;
-import service.AdminClient;
-import service.AuthClient;
-import service.api.AdminApiClient;
-import service.api.AuthApiClient;
 
 @RestTest
 public class LoginUserTest {
-    private final AdminClient adminClient = new AdminApiClient();
-    private final AuthClient authClient = new AuthApiClient();
 
     @Test
     public void adminCanGenerateAuthTokenTest() {

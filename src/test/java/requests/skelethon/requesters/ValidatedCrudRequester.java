@@ -32,8 +32,8 @@ public class ValidatedCrudRequester<T extends BaseModel> extends HttpRequest imp
 
     @Override
     @SuppressWarnings("unchecked")
-    public T update(Long id, BaseModel body) {
-        return (T) crudRequester.update(id, body).extract().as(endpoint.getResponseModel());
+    public T update(BaseModel body) {
+        return (T) crudRequester.update(body).extract().as(endpoint.getResponseModel());
     }
 
     @Override

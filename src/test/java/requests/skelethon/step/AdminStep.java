@@ -21,7 +21,7 @@ public class AdminStep {
         return user;
     }
 
-    public static CreateUserJsonResponse createUser(CreateUserJsonRequest user) {
+    public static CreateUserJsonResponse createUser(@NonNull CreateUserJsonRequest user) {
         return (CreateUserJsonResponse) new ValidatedCrudRequester<>(
                 RequestSpecs.adminSpec(),
                 Endpoint.ADMIN_USER,

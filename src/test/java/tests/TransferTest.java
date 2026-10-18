@@ -14,13 +14,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import service.CustomerClient;
-import service.api.AccountsApiClient;
-import service.api.CustomerApiClient;
+import requests.skelethon.step.TransferStep;
+import requests.skelethon.step.UserStep;
 import utils.Repeat;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static api.ApiLimits.*;
@@ -29,8 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 @RestTest
 public class TransferTest {
-    private final AccountsApiClient accountsClient = new AccountsApiClient();
-    private final CustomerClient customerClient = new CustomerApiClient();
 
     // ---------- POSITIVE ----------
     static Stream<Arguments> validTransferAmounts() {
@@ -47,26 +45,30 @@ public class TransferTest {
 
     @Data(
             users = {
-                    @User(username = "userTransfer1", accounts = {@Account(balance = ApiLimits.TRANSFER_MAX_STR)}),
-                    @User(username = "userTransfer2", randomAccounts = 1)
+                    @User(accounts = {@Account(balance = ApiLimits.TRANSFER_MAX_STR)}),
+                    @User(randomAccounts = 1)
             }
     )
     @ApiLogin
     @ParameterizedTest
     @MethodSource("validTransferAmounts")
     public void transferValidAmountToSomeoneElseAccountTest(BigDecimal amountSent, BigDecimal remainingAmount, TestData data) {
-        CreateUserJsonResponse firstUser = data.requireByUsername("userTransfer1");
-        CreateUserJsonResponse secondUser = data.requireByUsername("userTransfer2");
+        CreateUserJsonResponse firstUser = data.usersJson().getFirst();
+        CreateUserJsonResponse secondUser = data.usersJson().getLast();
 
         Long firstAccountId = firstUser.accounts().getFirst().id();
         Long secondAccountId = secondUser.accounts().getFirst().id();
-        accountsClient.transfer(firstUser.username(),
+
+        TransferStep.transfer(
+                firstUser.username(),
                 new TransferJson(firstAccountId, secondAccountId, amountSent, "")
         );
 
         assertAll(
-                () -> assertThat(customerClient.getAccountById(firstUser.username(), firstAccountId).balance()).isEqualByComparingTo(remainingAmount),
-                () -> assertThat(customerClient.getAccountById(secondUser.username(), secondAccountId).balance()).isEqualByComparingTo(amountSent)
+                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(firstUser.username(), firstAccountId)).balance())
+                        .isEqualByComparingTo(remainingAmount),
+                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(secondUser.username(), secondAccountId)).balance())
+                        .isEqualByComparingTo(amountSent)
         );
     }
 
@@ -80,17 +82,18 @@ public class TransferTest {
     @ApiLogin
     @Test
     public void transferToYourselfTest(CreateUserJsonResponse user) {
-
         Long firstAccountId = user.accounts().getLast().id();
         Long secondAccountId = user.accounts().getFirst().id();
-        accountsClient.transfer(user.username(),
+
+        TransferStep.transfer(
+                user.username(),
                 new TransferJson(firstAccountId, secondAccountId, TRANSFER_MIN, "")
         );
 
         assertAll(
-                () -> assertThat(customerClient.getAccountById(user.username(), firstAccountId).balance())
+                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(user.username(), firstAccountId)).balance())
                         .isEqualByComparingTo(TRANSFER_MAX.subtract(TRANSFER_MIN)),
-                () -> assertThat(customerClient.getAccountById(user.username(), secondAccountId).balance())
+                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(user.username(), secondAccountId)).balance())
                         .isEqualByComparingTo(TRANSFER_MIN)
         );
     }
@@ -115,15 +118,16 @@ public class TransferTest {
         int i = 2;
         BigDecimal transferAmount = ApiLimits.TRANSFER_MAX.divide(BigDecimal.valueOf(i), RoundingMode.HALF_UP);
         Repeat.repeat(i, () -> {
-            accountsClient.transfer(firstUser.username(),
+            TransferStep.transfer(
+                    firstUser.username(),
                     new TransferJson(firstAccountId, secondAccountId, transferAmount, "")
             );
         });
 
         assertAll(
-                () -> assertThat(customerClient.getAccountById(firstUser.username(), firstAccountId).balance())
+                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(firstUser.username(), firstAccountId)).balance())
                         .isEqualByComparingTo(BigDecimal.ZERO),
-                () -> assertThat(customerClient.getAccountById(secondUser.username(), secondAccountId).balance())
+                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(secondUser.username(), secondAccountId)).balance())
                         .isEqualByComparingTo(ApiLimits.TRANSFER_MAX_STR)
         );
     }
@@ -140,29 +144,29 @@ public class TransferTest {
 
     @Data(
             users = {
-                    @User(username = "userErTransfer1", accounts = {@Account(balance = TRANSFER_20000_STR)}),
-                    @User(username = "userErTransfer2", randomAccounts = 1)
+                    @User(accounts = {@Account(balance = TRANSFER_20000_STR)}),
+                    @User(randomAccounts = 1)
             }
     )
     @ApiLogin
     @ParameterizedTest
     @MethodSource("transferInvalidData")
     public void transferInvalidBoundaryAmountDoesNotChangeBalancesTest(BigDecimal amountSent, String errorMessage, TestData data) {
-        CreateUserJsonResponse firstUser = data.requireByUsername("userErTransfer1");
-        CreateUserJsonResponse secondUser = data.requireByUsername("userErTransfer2");
+        CreateUserJsonResponse firstUser = data.usersJson().getFirst();
+        CreateUserJsonResponse secondUser = data.usersJson().getLast();
 
         Long firstAccountId = firstUser.accounts().getFirst().id();
         Long secondAccountId = secondUser.accounts().getFirst().id();
-        accountsClient.performTransferExpectingError(firstUser.username(),
+        TransferStep.transferExpectingError(
+                firstUser.username(),
                 new TransferJson(firstAccountId, secondAccountId, amountSent, ""),
-                ApiErrors.KEY_MESSAGE,
                 errorMessage
         );
 
         assertAll(
-                () -> assertThat(customerClient.getAccountById(firstUser.username(), firstAccountId).balance())
+                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(firstUser.username(), firstAccountId)).balance())
                         .isEqualByComparingTo(TRANSFER_20000),
-                () -> assertThat(customerClient.getAccountById(secondUser.username(), secondAccountId).balance())
+                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(secondUser.username(), secondAccountId)).balance())
                         .isEqualByComparingTo(BigDecimal.ZERO)
         );
     }
@@ -187,16 +191,16 @@ public class TransferTest {
         Long firstAccountId = firstUser.accounts().getFirst().id();
         Long secondAccountId = secondUser.accounts().getFirst().id();
 
-        accountsClient.performTransferExpectingError(firstUser.username(),
+        TransferStep.transferExpectingError(
+                firstUser.username(),
                 new TransferJson(firstAccountId, secondAccountId, TRANSFER_MAX, ""),
-                ApiErrors.KEY_MESSAGE,
                 ApiErrors.Transfer.INVALID
         );
 
         assertAll(
-                () -> assertThat(customerClient.getAccountById(firstUser.username(), firstAccountId).balance())
+                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(firstUser.username(), firstAccountId)).balance())
                         .isEqualByComparingTo(TRANSFER_MIN),
-                () -> assertThat(customerClient.getAccountById(secondUser.username(), secondAccountId).balance())
+                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(secondUser.username(), secondAccountId)).balance())
                         .isEqualByComparingTo(BigDecimal.ZERO)
         );
     }
