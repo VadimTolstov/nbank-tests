@@ -4,7 +4,6 @@ import api.ApiErrors;
 import api.spec.RequestSpecs;
 import api.spec.ResponseSpecs;
 import lombok.NonNull;
-import models.rest.DepositJsonRequest;
 import models.rest.TransferJson;
 import org.apache.http.HttpStatus;
 import requests.skelethon.Endpoint;
