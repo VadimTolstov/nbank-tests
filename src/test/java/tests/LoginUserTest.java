@@ -1,43 +1,42 @@
 package tests;
 
-import generators.RandomData;
-import models.AdminCredentials;
-import models.LoginUserRequest;
-import models.UserRequest;
-import models.UserRole;
-import org.hamcrest.Matchers;
+import api.spec.RequestSpecs;
+import api.spec.ResponseSpecs;
+import jupiter.annotation.AdminApiLogin;
+import jupiter.annotation.meta.RestTest;
+import models.rest.AdminConstants;
+import models.rest.CreateUserJsonRequest;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import requests.LoginUserRequester;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
+import requests.skelethon.Endpoint;
+import requests.skelethon.requesters.AuthRequester;
+import requests.skelethon.step.AdminStep;
 
-public class LoginUserTest extends BaseTest {
+@RestTest
+public class LoginUserTest {
 
     @Test
     public void adminCanGenerateAuthTokenTest() {
-        LoginUserRequest userRequest = LoginUserRequest.builder()
-                .username(AdminCredentials.LOGIN.getValue())
-                .password(AdminCredentials.PASSWORD.getValue())
-                .build();
+        String token = new AuthRequester(
+                RequestSpecs.defaultSpec(),
+                Endpoint.AUTH_LOGIN,
+                ResponseSpecs.OK
+        ).login(AdminConstants.LOGIN, AdminConstants.PASSWORD);
 
-        new LoginUserRequester(RequestSpecs.unauthSpec(),
-                ResponseSpecs.requestReturnsOK())
-                .post(userRequest);
+        Assertions.assertNotNull(token);
     }
 
+    @AdminApiLogin
     @Test
     public void userCanGenerateAuthTokenTest() {
-        UserRequest userRequest = UserRequest.builder()
-                .username(RandomData.getUsername())
-                .password(RandomData.getPassword())
-                .role(UserRole.USER)
-                .build();
+        CreateUserJsonRequest user = AdminStep.createUser();
 
-        createUser(userRequest);
+        String token = new AuthRequester(
+                RequestSpecs.defaultSpec(),
+                Endpoint.AUTH_LOGIN,
+                ResponseSpecs.OK
+        ).login(user.username(), user.password());
 
-        new LoginUserRequester(RequestSpecs.unauthSpec(),
-                ResponseSpecs.requestReturnsOK())
-                .post(LoginUserRequest.builder().username(userRequest.getUsername()).password(userRequest.getPassword()).build())
-                .header("Authorization", Matchers.notNullValue());
+        Assertions.assertNotNull(token);
     }
 }

@@ -1,25 +1,36 @@
 package tests;
 
-import models.CreateUserResponse;
-import models.CustomerAccount;
-import models.UserRequest;
+import api.spec.RequestSpecs;
+import api.spec.ResponseSpecs;
+import jupiter.annotation.ApiLogin;
+import jupiter.annotation.User;
+import jupiter.annotation.meta.RestTest;
+import models.comparison.ModelAssertions;
+import models.rest.CreateUserJsonRequest;
+import models.rest.CreateUserJsonResponse;
+import models.rest.CustomerAccountJson;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import requests.skelethon.Endpoint;
+import requests.skelethon.requesters.ValidatedCrudRequester;
+import requests.skelethon.step.UserStep;
 
-import java.math.BigDecimal;
+@RestTest
+public class CreateAccountTest {
 
-public class CreateAccountTest extends BaseTest {
-
+    @User
+    @ApiLogin
     @Test
-    public void userCanCreateAccountTest() {
-        UserRequest userRequest = freshUser();
-        CreateUserResponse user = createUser(userRequest);
-        CustomerAccount account = createAccount(userRequest);
+    public void userCanCreateAccountTest(CreateUserJsonResponse user) {
+        CustomerAccountJson accountResponse = (CustomerAccountJson) new ValidatedCrudRequester<>(
+                RequestSpecs.authAsUser(user.username()),
+                Endpoint.ACCOUNTS,
+                ResponseSpecs.CREATED
+        ).post(new CreateUserJsonRequest(user.username(), user.password(), user.role()));
 
-        softly.assertThat(account)
-                .usingRecursiveComparison()
-                .withComparatorForType(BigDecimal::compareTo, BigDecimal.class)
-                .isEqualTo(getAccountById(user, account.getId()));
-        // запросить все аккаунты пользователя и проверить, что наш аккаунт там
+
+        CustomerAccountJson accountById = UserStep.getAccountById(user.username(), accountResponse.id());
+        Assertions.assertNotNull(accountById);
+        ModelAssertions.assertThatModels(accountResponse, accountById).match();
     }
 }

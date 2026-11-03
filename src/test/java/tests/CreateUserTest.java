@@ -1,55 +1,59 @@
 package tests;
 
-import generators.RandomData;
-import models.UserRequest;
-import models.CreateUserResponse;
-import models.UserRole;
+import api.ApiErrors;
+import api.spec.RequestSpecs;
+import api.spec.ResponseSpecs;
+import generators.RandomModelGenerator;
+import jupiter.annotation.AdminApiLogin;
+import jupiter.annotation.meta.RestTest;
+import models.comparison.ModelAssertions;
+import models.rest.CreateUserJsonRequest;
+import models.rest.CreateUserJsonResponse;
+import models.rest.UserRole;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import requests.AdminCreateUserRequester;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
+import requests.skelethon.Endpoint;
+import requests.skelethon.requesters.CrudRequester;
+import requests.skelethon.step.AdminStep;
 
 import java.util.stream.Stream;
 
-public class CreateUserTest extends BaseTest {
+@RestTest
+public class CreateUserTest {
+
+    @AdminApiLogin
     @Test
     public void adminCanCreateUserWithCorrectData() {
-        UserRequest userRequest = freshUser();
-        CreateUserResponse createUserResponse =  createUser(userRequest);
-        createUserResponse = getUserById(createUserResponse);
-        softly.assertThat(userRequest.getUsername()).isEqualTo(createUserResponse.getUsername());
-        softly.assertThat(userRequest.getPassword()).isNotEqualTo(createUserResponse.getPassword());
-        softly.assertThat(userRequest.getRole()).isEqualTo(createUserResponse.getRole());
+        CreateUserJsonRequest userJsonRequest = RandomModelGenerator.generate(CreateUserJsonRequest.class);
 
+        CreateUserJsonResponse userJsonResponse = AdminStep.createUser(userJsonRequest);
+
+        ModelAssertions.assertThatModels(userJsonRequest, userJsonResponse).match();
+        ModelAssertions.assertThatModels(userJsonRequest, AdminStep.getUserById(userJsonResponse.id())).match();
     }
 
     public static Stream<Arguments> userInvalidData() {
         return Stream.of(
-                // username field validation
-                Arguments.of("   ", "Password33$", "USER", "username", "Username cannot be blank"),
-                Arguments.of("ab", "Password33$", "USER", "username", "Username must be between 3 and 15 characters"),
-                Arguments.of("abc$", "Password33$", "USER", "username", "Username must contain only letters, digits, dashes, underscores, and dots"),
-                Arguments.of("abc%", "Password33$", "USER", "username", "Username must contain only letters, digits, dashes, underscores, and dots")
+                Arguments.of("   ", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_BLANK),
+                Arguments.of("ab", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_LENGTH),
+                Arguments.of("abc$", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_INVALID_CHARS),
+                Arguments.of("abc%", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_INVALID_CHARS)
         );
-
     }
 
+    @AdminApiLogin
     @MethodSource("userInvalidData")
-    @ParameterizedTest
+    @ParameterizedTest(name = "[{index}] username={0} → {4}")
     public void adminCanNotCreateUserWithInvalidData(String username, String password, UserRole role, String errorKey, String errorValue) {
-        UserRequest userRequest = UserRequest.builder()
-                .username(username)
-                .password(password)
-                .role(role)
-                .build();
+        new CrudRequester(
+                RequestSpecs.adminSpec(),
+                Endpoint.ADMIN_USER,
+                ResponseSpecs.errorWithField(errorKey, errorValue)
+        ).post(new CreateUserJsonRequest(username, password, role));
 
-        new AdminCreateUserRequester(RequestSpecs.adminSpec(),
-                ResponseSpecs.requestReturnsBadRequest(errorKey, errorValue))
-                .post(userRequest);
-            Assertions.assertNull(getUserByName(username));
+        Assertions.assertNull(AdminStep.getUserByUsername(username));
     }
 }
