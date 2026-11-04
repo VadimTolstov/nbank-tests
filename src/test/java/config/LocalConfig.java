@@ -19,4 +19,14 @@ public enum LocalConfig implements Config {
     public @NotNull String nbankUrl() {
         return serverUrl("4111");
     }
+
+    @Override
+    public @NotNull String nbankUiUrl() {
+        return "http://192.168.100.2:3000";
+    }
+
+    @Override
+    public @NotNull String selenoidUrl() {
+        return "http://localhost:4444/wd/hub";
+    }
 }

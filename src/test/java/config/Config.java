@@ -13,10 +13,18 @@ public interface Config {
     @NotNull
     String nbankUrl();
 
+    @NotNull
+    String nbankUiUrl();
+
+    @NotNull
+    String selenoidUrl();
+
+    // Оставили для API (там слэш в конце обычно не мешает, RestAssured его нормализует)
     default @NotNull String url(@NonNull String type, @NonNull String host, @NonNull String port) {
         return String.format("%s://%s:%s/", type, host, port);
     }
 
-    default @NotNull String apiBasePathV1() { return "/api/v1"; }
-
+    default @NotNull String apiBasePathV1() {
+        return "/api/v1";
+    }
 }

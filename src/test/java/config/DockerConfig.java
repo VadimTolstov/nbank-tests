@@ -10,4 +10,14 @@ public enum DockerConfig implements Config {
     public @NotNull String nbankUrl() {
         return "";
     }
+
+    @Override
+    public @NotNull String nbankUiUrl() {
+        return "";
+    }
+
+    @Override
+    public @NotNull String selenoidUrl() {
+        return "";
+    }
 }

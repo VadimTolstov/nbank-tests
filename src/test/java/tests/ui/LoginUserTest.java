@@ -1,22 +1,18 @@
 package tests.ui;
 
 import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.Selenide;
 import jupiter.annotation.AdminApiLogin;
 import jupiter.annotation.meta.WebTest;
 import models.rest.CreateUserJsonRequest;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import requests.skelethon.step.AdminStep;
-
-import java.util.Map;
 
 import static com.codeborne.selenide.Selenide.$;
 
 @WebTest
-public class LoginUserTest extends  TestBase{
+public class LoginUserTest {
 
 
     @Test
