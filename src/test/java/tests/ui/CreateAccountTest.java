@@ -2,7 +2,6 @@ package tests.ui;
 
 import api.spec.RequestSpecs;
 import api.spec.ResponseSpecs;
-import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.Selenide;
 import jupiter.annotation.AdminApiLogin;
@@ -10,14 +9,12 @@ import jupiter.annotation.meta.WebTest;
 import models.rest.AdminConstants;
 import models.rest.CreateUserJsonRequest;
 import models.rest.CreateUserJsonResponse;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Alert;
 import requests.skelethon.Endpoint;
 import requests.skelethon.requesters.CrudRequester;
 import requests.skelethon.step.AdminStep;
 
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,18 +23,8 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @WebTest
-public class CreateAccountTest {
-    @BeforeAll
-    public static void setupSelenoid() {
-        Configuration.remote = "http://localhost:4444/wd/hub";
-        Configuration.baseUrl = "http://192.168.100.2:3000";
-        Configuration.browser = "chrome";
-        Configuration.browserSize = "1920x1080";
+public class CreateAccountTest extends TestBase {
 
-        Configuration.browserCapabilities.setCapability("selenoid:options",
-                Map.of("enableVNC", true, "enableLog", true)
-        );
-    }
 
     @AdminApiLogin
     @Test

@@ -1,10 +1,7 @@
 package jupiter.annotation.meta;
 
 import io.qameta.allure.Feature;
-import jupiter.extension.AccountExtension;
-import jupiter.extension.ApiLoginExtension;
-import jupiter.extension.TestDataExtension;
-import jupiter.extension.UserExtension;
+import jupiter.extension.*;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -18,6 +15,7 @@ import java.lang.annotation.Target;
 @Feature("WEB тесты")
 @Tag("WEB")
 @ExtendWith({
+        BrowserExtension.class,
         TestDataExtension.class,
         UserExtension.class,
         ApiLoginExtension.class,

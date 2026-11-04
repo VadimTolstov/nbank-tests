@@ -78,6 +78,12 @@
             <artifactId>selenide</artifactId>
             <version>7.9.1</version>
         </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-selenide</artifactId>
+            <version>2.35.5</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -16,18 +16,8 @@ import java.util.Map;
 import static com.codeborne.selenide.Selenide.$;
 
 @WebTest
-public class LoginUserTest {
-    @BeforeAll
-    public static void setupSelenoid() {
-        Configuration.remote = "http://localhost:4444/wd/hub";
-        Configuration.baseUrl = "http://192.168.100.2:3000";
-        Configuration.browser = "chrome";
-        Configuration.browserSize = "1920x1080";
+public class LoginUserTest extends  TestBase{
 
-        Configuration.browserCapabilities.setCapability("selenoid:options",
-                Map.of("enableVNC", true, "enableLog", true)
-        );
-    }
 
     @Test
     public void adminCanLoginWithCorrectDataTest() {

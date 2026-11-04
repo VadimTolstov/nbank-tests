@@ -1,7 +1,10 @@
 package tests.ui;
 
 import api.spec.RequestSpecs;
-import com.codeborne.selenide.*;
+import com.codeborne.selenide.Condition;
+import com.codeborne.selenide.ElementsCollection;
+import com.codeborne.selenide.Selectors;
+import com.codeborne.selenide.Selenide;
 import generators.RandomModelGenerator;
 import jupiter.annotation.AdminApiLogin;
 import jupiter.annotation.meta.WebTest;
@@ -9,12 +12,10 @@ import models.comparison.ModelAssertions;
 import models.rest.CreateUserJsonRequest;
 import models.rest.CreateUserJsonResponse;
 import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Alert;
 
 import java.util.Arrays;
-import java.util.Map;
 
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.switchTo;
@@ -23,18 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @WebTest
-public class CreateUserTest {
-    @BeforeAll
-    public static void setupSelenoid() {
-        Configuration.remote = "http://localhost:4444/wd/hub";
-        Configuration.baseUrl = "http://192.168.100.2:3000";
-        Configuration.browser = "chrome";
-        Configuration.browserSize = "1920x1080";
-
-        Configuration.browserCapabilities.setCapability("selenoid:options",
-                Map.of("enableVNC", true, "enableLog", true)
-        );
-    }
+public class CreateUserTest extends TestBase {
 
     @AdminApiLogin
     @Test
