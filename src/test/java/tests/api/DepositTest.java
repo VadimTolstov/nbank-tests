@@ -1,4 +1,4 @@
-package tests;
+package tests.api;
 
 import api.ApiErrors;
 import jupiter.annotation.Account;

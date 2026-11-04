@@ -1,4 +1,4 @@
-package tests;
+package tests.api;
 
 import api.spec.RequestSpecs;
 import api.spec.ResponseSpecs;
