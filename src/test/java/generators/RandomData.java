@@ -23,4 +23,9 @@ public class RandomData {
         return "Basic " + Base64.getEncoder()
                 .encodeToString("wrong:wrong".getBytes(StandardCharsets.UTF_8));
     }
+
+    public static String getName() {
+        return RandomStringUtils.randomAlphabetic(5) + " " +
+                RandomStringUtils.randomAlphabetic(6);
+    }
 }
