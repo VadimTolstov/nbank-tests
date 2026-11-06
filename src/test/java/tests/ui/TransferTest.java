@@ -13,7 +13,7 @@ import models.TestData;
 import models.rest.CreateUserJsonResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import requests.skelethon.step.UserStep;
+import api.requests.skelethon.step.UserStep;
 
 import java.math.BigDecimal;
 import java.util.Objects;

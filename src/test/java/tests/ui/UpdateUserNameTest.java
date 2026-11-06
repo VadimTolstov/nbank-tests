@@ -11,8 +11,7 @@ import models.rest.CreateUserJsonResponse;
 import models.rest.CustomerProfileJsonResponse;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.Alert;
-import requests.skelethon.step.UserStep;
+import api.requests.skelethon.step.UserStep;
 
 import static com.codeborne.selenide.Selenide.*;
 import static org.assertj.core.api.Assertions.assertThat;

@@ -1,6 +1,5 @@
 package tests.ui;
 
-import api.ApiErrors;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.Selenide;
@@ -10,12 +9,10 @@ import jupiter.annotation.meta.WebTest;
 import models.rest.CreateUserJsonResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.Arguments;
-import requests.skelethon.step.UserStep;
+import api.requests.skelethon.step.UserStep;
 
 import java.math.BigDecimal;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static api.ApiLimits.*;
 import static com.codeborne.selenide.Selenide.$;
