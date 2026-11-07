@@ -1,8 +1,6 @@
 package tests.ui;
 
-import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Selectors;
-import com.codeborne.selenide.Selenide;
+import api.requests.skelethon.step.UserStep;
 import generators.RandomData;
 import jupiter.annotation.ApiLogin;
 import jupiter.annotation.User;
@@ -11,10 +9,10 @@ import models.rest.CreateUserJsonResponse;
 import models.rest.CustomerProfileJsonResponse;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import api.requests.skelethon.step.UserStep;
+import ui.pages.UserProfile;
 
-import static com.codeborne.selenide.Selenide.*;
-import static org.assertj.core.api.Assertions.assertThat;
+import static ui.pages.BankAlert.USER_UPDATED_NAME_FAIL;
+import static ui.pages.BankAlert.USER_UPDATED_NAME_SUCCESS;
 
 @WebTest
 public class UpdateUserNameTest {
@@ -24,22 +22,11 @@ public class UpdateUserNameTest {
     @Test
     void updateUserNameTest(CreateUserJsonResponse user) {
         String newUsername = RandomData.getName();
-        Selenide.open("/edit-profile");
 
-
-        $(Selectors.byAttribute("placeholder", "Enter new name"))
-                .shouldBe(Condition.visible)
-                .shouldBe(Condition.clickable)
-                .setValue(newUsername);
-
-
-        $x("//button[contains(text(), 'Save Changes')]")
-                .shouldBe(Condition.clickable)
-                .click();
-
-        String alertText = Selenide.confirm();
-
-        assertThat(alertText).contains("✅ Name updated successfully!");
+        new UserProfile().open()
+                .setUserName(newUsername)
+                .clickSaveChanges()
+                .checkAlertMessageAndAccept(USER_UPDATED_NAME_SUCCESS.getMessage());
 
         CustomerProfileJsonResponse profile = UserStep.getProfile(user.username());
         Assertions.assertThat(profile.name()).isEqualTo(newUsername);
@@ -49,23 +36,10 @@ public class UpdateUserNameTest {
     @ApiLogin
     @Test
     void updateNameWithInvalidValueTest(CreateUserJsonResponse user) {
-        String newUsername = RandomData.getUsername();
-        Selenide.open("/edit-profile");
-
-
-        $(Selectors.byAttribute("placeholder", "Enter new name"))
-                .shouldBe(Condition.visible)
-                .shouldBe(Condition.clickable)
-                .setValue(newUsername);
-
-
-        $x("//button[contains(text(), 'Save Changes')]")
-                .shouldBe(Condition.clickable)
-                .click();
-
-        String alertText = Selenide.confirm();
-
-        assertThat(alertText).contains("❌ Please enter a valid name.");
+        new UserProfile().open()
+                .setUserName(RandomData.getUsername())
+                .clickSaveChanges()
+                .checkAlertMessageAndAccept(USER_UPDATED_NAME_FAIL.getMessage());
 
         CustomerProfileJsonResponse profile = UserStep.getProfile(user.username());
         Assertions.assertThat(profile.name()).isNull();
