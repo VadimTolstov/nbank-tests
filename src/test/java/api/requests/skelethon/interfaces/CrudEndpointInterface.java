@@ -1,4 +1,4 @@
-package requests.skelethon.interfaces;
+package api.requests.skelethon.interfaces;
 
 import io.restassured.response.ValidatableResponse;
 import models.rest.BaseModel;

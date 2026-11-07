@@ -1,4 +1,4 @@
-package requests.skelethon.step;
+package api.requests.skelethon.step;
 
 import api.spec.RequestSpecs;
 import api.spec.ResponseSpecs;
@@ -7,9 +7,9 @@ import lombok.NonNull;
 import models.rest.CreateUserJsonRequest;
 import models.rest.CreateUserJsonResponse;
 import org.jetbrains.annotations.Nullable;
-import requests.skelethon.Endpoint;
-import requests.skelethon.requesters.GetUsersRequester;
-import requests.skelethon.requesters.ValidatedCrudRequester;
+import api.requests.skelethon.Endpoint;
+import api.requests.skelethon.requesters.GetUsersRequester;
+import api.requests.skelethon.requesters.ValidatedCrudRequester;
 
 import java.util.List;
 
