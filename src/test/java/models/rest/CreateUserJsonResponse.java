@@ -1,7 +1,6 @@
 package models.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
@@ -32,5 +31,20 @@ public record CreateUserJsonResponse(
 ) implements BaseModel {
 
     public record AccountMeta(String balance) {
+    }
+
+    public CustomerAccountJson getFirstAccount() {
+        if (accounts == null || accounts.isEmpty()) {
+            throw new IllegalStateException("У пользователя '" + username + "' нет ни одного счета");
+        }
+        return accounts.getFirst();
+    }
+
+    public String getFirstAccountNumber() {
+        return getFirstAccount().accountNumber();
+    }
+
+    public Long getAccountId() {
+        return getFirstAccount().id();
     }
 }

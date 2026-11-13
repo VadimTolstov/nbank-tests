@@ -8,9 +8,9 @@ import models.rest.AdminConstants;
 import models.rest.CreateUserJsonRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import requests.skelethon.Endpoint;
-import requests.skelethon.requesters.AuthRequester;
-import requests.skelethon.step.AdminStep;
+import api.requests.skelethon.Endpoint;
+import api.requests.skelethon.requesters.AuthRequester;
+import api.requests.skelethon.step.AdminStep;
 
 @RestTest
 public class LoginUserTest {

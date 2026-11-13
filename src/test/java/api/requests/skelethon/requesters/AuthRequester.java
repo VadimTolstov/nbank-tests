@@ -1,4 +1,4 @@
-package requests.skelethon.requesters;
+package api.requests.skelethon.requesters;
 
 import api.core.AuthContext;
 import io.restassured.response.Response;
@@ -7,9 +7,9 @@ import io.restassured.specification.ResponseSpecification;
 import models.rest.CreateUserJsonRequest;
 import models.rest.UserRole;
 import org.jetbrains.annotations.Nullable;
-import requests.skelethon.Endpoint;
-import requests.skelethon.HttpRequest;
-import requests.skelethon.interfaces.AuthEndpointInterface;
+import api.requests.skelethon.Endpoint;
+import api.requests.skelethon.HttpRequest;
+import api.requests.skelethon.interfaces.AuthEndpointInterface;
 
 import static api.Headers.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
