@@ -24,7 +24,7 @@ public class LoginUserTest {
     @Test
     public void userCanLoginWithCorrectDataTest(CreateUserJsonResponse user) {
         new LoginPage().open().login(user.username(), user.password())
-                .getPage(UserDashboard.class).getWelcomeText()
-                .shouldBe(Condition.visible).shouldHave(Condition.text("Welcome, noname!"));
+                .getPage(UserDashboard.class)
+                .shouldWelcome();
     }
 }

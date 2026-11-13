@@ -25,7 +25,7 @@ public class CreateUserTest {
 
         new AdminPanel().open().createUser(newUser.username(), newUser.password())
                 .checkAlertMessageAndAccept(BankAlert.USER_CREATED_SUCCESSFULLY.getMessage())
-                .getAllUsers().findBy(Condition.exactText(newUser.username() + "\nUSER")).shouldBe(Condition.visible);
+                .shouldContainUser(newUser.username());
 
         CreateUserJsonResponse createdUser = AdminStep.getUsers().stream().filter(user -> user.username().equals(newUser.username()))
                 .findFirst().get();
@@ -45,7 +45,7 @@ public class CreateUserTest {
 
         new AdminPanel().open().createUser(newUser.username(), newUser.password())
                 .checkAlertMessageAndAccept(BankAlert.USERNAME_MUST_BE_BETWEEN_3_AND_15_CHARACTERS.getMessage())
-                .getAllUsers().findBy(Condition.exactText(newUser.username() + "\nUSER")).shouldNotBe(Condition.exist);
+                .shouldNotContainUser(newUser.username());
 
         long usersWithSameUsernameAsNewUser = AdminStep.getUsers().stream()
                 .filter(user -> user.username().equals(newUser.username())).count();
