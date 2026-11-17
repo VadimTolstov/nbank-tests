@@ -1,6 +1,5 @@
 package api.requests.skelethon.step;
 
-import api.ApiErrors;
 import api.spec.RequestSpecs;
 import api.spec.ResponseSpecs;
 import lombok.NonNull;
@@ -24,9 +23,8 @@ public class TransferStep {
         new CrudRequester(
                 RequestSpecs.authAsUser(username),
                 Endpoint.ACCOUNTS_TRANSFER,
-                ResponseSpecs.errorWithField(
+                ResponseSpecs.errorWithText(
                         HttpStatus.SC_BAD_REQUEST,
-                        ApiErrors.KEY_MESSAGE,
                         errorMessage
                 )).post(transfer);
     }

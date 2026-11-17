@@ -61,8 +61,8 @@ public final class ApiErrors {
         private Deposit() {
         }
 
-        public static final String INVALID_AMOUNT = "Invalid account or amount";
-        public static final String LIMIT_5000 = "Deposit amount exceeds the 5000 limit";
+        public static final String INVALID_AMOUNT = "Deposit amount must be at least 0.01";
+        public static final String LIMIT_5000 = "Deposit amount cannot exceed 5000";
         public static final String INVALID_TYPES =
                 "Invalid field types: accountId must be integer, amount must be number";
     }
@@ -73,6 +73,8 @@ public final class ApiErrors {
 
         private Transfer() {
         }
+
+        public static final String INVALID_AMOUNT = "Transfer amount must be at least 0.01";
 
         public static final String INVALID =
                 "Invalid transfer: insufficient funds or invalid accounts";

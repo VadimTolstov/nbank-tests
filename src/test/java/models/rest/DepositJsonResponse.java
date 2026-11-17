@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 
 @Builder(toBuilder = true)
@@ -14,9 +15,7 @@ public record DepositJsonResponse(
         String accountNumber,
         @JsonProperty("balance")
         BigDecimal balance,
-        @JsonProperty("depositAmount")
-        BigDecimal depositAmount,
-        @JsonProperty("transactionId")
-        Long transactionId
+        @JsonProperty("transactions")
+        List<TransactionJson> transactions
 ) implements BaseModel {
 }

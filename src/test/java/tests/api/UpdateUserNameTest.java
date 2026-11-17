@@ -10,6 +10,7 @@ import models.comparison.ModelAssertions;
 import models.rest.CreateUserJsonResponse;
 import models.rest.CustomerProfileJsonResponse;
 import models.rest.UpdateUserNameRequest;
+import org.apache.http.HttpStatus;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -49,20 +50,20 @@ public class UpdateUserNameTest {
     // ---------- negatives: invalid name ----------
     public static Stream<Arguments> invalidNames() {
         return Stream.of(
-                Arguments.of("John", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("John John John ", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("John  John", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of(" John John", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("John-John", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("John 1", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("        ", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("John  ", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("John John1", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("John John%", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("[\"John\",\"Smith\"]", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("123", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("John\tSmith", ApiErrors.KEY_MESSAGE, ApiErrors.Profile.INVALID_NAME)
+                Arguments.of("John", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("John John John ", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("John  John", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of(" John John", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("John-John", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("John 1", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("        ", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("John  ", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("John John1", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("John John%", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("[\"John\",\"Smith\"]", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("123", ApiErrors.Profile.INVALID_NAME),
+                Arguments.of("John\tSmith", ApiErrors.Profile.INVALID_NAME)
         );
     }
 
@@ -70,11 +71,11 @@ public class UpdateUserNameTest {
     @ApiLogin
     @ParameterizedTest()
     @MethodSource("invalidNames")
-    public void updateNameWithInvalidValueTest(String name, String errorKey, String errorValue, CreateUserJsonResponse user) {
+    public void updateNameWithInvalidValueTest(String name, String errorValue, CreateUserJsonResponse user) {
         new CrudRequester(
                 RequestSpecs.authAsUser(user.username()),
                 Endpoint.CUSTOMER_PROFILE_UPDATE,
-                ResponseSpecs.errorWithField(errorKey, errorValue))
+                ResponseSpecs.errorWithText(HttpStatus.SC_BAD_REQUEST, errorValue))
                 .update(new UpdateUserNameRequest(name));
 
         CustomerProfileJsonResponse profile = UserStep.getProfile(user.username());

@@ -137,8 +137,8 @@ public class TransferTest {
     public static Stream<Arguments> transferInvalidData() {
         return Stream.of(
                 Arguments.of(TRANSFER_MAX.add(MINIMUM_STEP_TRANSFER), ApiErrors.Transfer.LIMIT_10000),
-                Arguments.of(TRANSFER_MIN.subtract(MINIMUM_STEP_TRANSFER), ApiErrors.Transfer.INVALID),
-                Arguments.of(TRANSFER_MIN.negate(), ApiErrors.Transfer.INVALID)
+                Arguments.of(TRANSFER_MIN.subtract(MINIMUM_STEP_TRANSFER), ApiErrors.Transfer.INVALID_AMOUNT),
+                Arguments.of(TRANSFER_MIN.negate(), ApiErrors.Transfer.INVALID_AMOUNT)
         );
     }
 

@@ -9,9 +9,9 @@ import java.math.BigDecimal;
 @Builder(toBuilder = true)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record DepositJsonRequest(
-        @JsonProperty("accountId")
+        @JsonProperty("id")
         Long accountId,
-        @JsonProperty("amount")
+        @JsonProperty("balance")
         BigDecimal amount
 ) implements BaseModel {
 

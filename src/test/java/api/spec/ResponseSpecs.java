@@ -126,6 +126,13 @@ public final class ResponseSpecs {
                 .build();
     }
 
+    public static ResponseSpecification errorWithText(int status, String message) {
+        return new ResponseSpecBuilder()
+                .expectStatusCode(status)
+                .expectBody(Matchers.equalTo(message))
+                .build();
+    }
+
     // ---------- внутренний билдер ----------
 
     private static ResponseSpecification status(int code) {

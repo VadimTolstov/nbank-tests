@@ -1,6 +1,5 @@
 package api.requests.skelethon.step;
 
-import api.ApiErrors;
 import api.spec.RequestSpecs;
 import api.spec.ResponseSpecs;
 import lombok.NonNull;
@@ -24,10 +23,7 @@ public class DepositStep {
         new CrudRequester(
                 RequestSpecs.authAsUser(username),
                 Endpoint.ACCOUNTS_DEPOSIT,
-                ResponseSpecs.errorWithField(
-                        expectedStatus,
-                        ApiErrors.KEY_MESSAGE,
-                        errorMessage
-                )).post(depositJsonRequest);
+                ResponseSpecs.errorWithText(expectedStatus, errorMessage)
+        ).post(depositJsonRequest);
     }
 }
