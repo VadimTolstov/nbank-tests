@@ -1,4 +1,4 @@
-package requests.skelethon.interfaces;
+package api.requests.skelethon.interfaces;
 
 public interface GetEndpointInterface {
     Object getEndpoint();

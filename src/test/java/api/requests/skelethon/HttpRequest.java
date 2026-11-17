@@ -1,4 +1,4 @@
-package requests.skelethon;
+package api.requests.skelethon;
 
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;

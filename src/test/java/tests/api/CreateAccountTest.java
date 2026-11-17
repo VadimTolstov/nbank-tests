@@ -1,5 +1,8 @@
 package tests.api;
 
+import api.requests.skelethon.Endpoint;
+import api.requests.skelethon.requesters.ValidatedCrudRequester;
+import api.requests.skelethon.step.UserStep;
 import api.spec.RequestSpecs;
 import api.spec.ResponseSpecs;
 import jupiter.annotation.ApiLogin;
@@ -11,9 +14,6 @@ import models.rest.CreateUserJsonResponse;
 import models.rest.CustomerAccountJson;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import requests.skelethon.Endpoint;
-import requests.skelethon.requesters.ValidatedCrudRequester;
-import requests.skelethon.step.UserStep;
 
 @RestTest
 public class CreateAccountTest {

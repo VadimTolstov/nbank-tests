@@ -1,15 +1,14 @@
 package tests.ui;
 
 import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Selectors;
-import com.codeborne.selenide.Selenide;
-import jupiter.annotation.AdminApiLogin;
+import jupiter.annotation.User;
 import jupiter.annotation.meta.WebTest;
-import models.rest.CreateUserJsonRequest;
+import models.rest.AdminConstants;
+import models.rest.CreateUserJsonResponse;
 import org.junit.jupiter.api.Test;
-import requests.skelethon.step.AdminStep;
-
-import static com.codeborne.selenide.Selenide.$;
+import ui.pages.AdminPanel;
+import ui.pages.LoginPage;
+import ui.pages.UserDashboard;
 
 @WebTest
 public class LoginUserTest {
@@ -17,28 +16,15 @@ public class LoginUserTest {
 
     @Test
     public void adminCanLoginWithCorrectDataTest() {
-        CreateUserJsonRequest admin = CreateUserJsonRequest.builder().username("admin").password("admin").build();
-
-        Selenide.open("/login");
-
-        $(Selectors.byAttribute("placeholder", "Username")).sendKeys(admin.username());
-        $(Selectors.byAttribute("placeholder", "Password")).sendKeys(admin.password());
-        $("button").click();
-
-        $(Selectors.byText("Admin Panel")).shouldBe(Condition.visible);
+        new LoginPage().open().login(AdminConstants.LOGIN, AdminConstants.PASSWORD)
+                .getPage(AdminPanel.class).getAdminPanelText().shouldBe(Condition.visible);
     }
 
-    @AdminApiLogin
+    @User
     @Test
-    public void userCanLoginWithCorrectDataTest() {
-        CreateUserJsonRequest user = AdminStep.createUser();
-
-        Selenide.open("/login");
-
-        $(Selectors.byAttribute("placeholder", "Username")).sendKeys(user.username());
-        $(Selectors.byAttribute("placeholder", "Password")).sendKeys(user.password());
-        $("button").click();
-
-        $(Selectors.byClassName("welcome-text")).shouldBe(Condition.visible).shouldHave(Condition.text("Welcome, noname!"));
+    public void userCanLoginWithCorrectDataTest(CreateUserJsonResponse user) {
+        new LoginPage().open().login(user.username(), user.password())
+                .getPage(UserDashboard.class)
+                .shouldWelcome();
     }
 }

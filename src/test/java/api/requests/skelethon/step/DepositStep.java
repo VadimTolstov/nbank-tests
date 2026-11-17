@@ -1,4 +1,4 @@
-package requests.skelethon.step;
+package api.requests.skelethon.step;
 
 import api.ApiErrors;
 import api.spec.RequestSpecs;
@@ -6,9 +6,9 @@ import api.spec.ResponseSpecs;
 import lombok.NonNull;
 import models.rest.DepositJsonRequest;
 import models.rest.DepositJsonResponse;
-import requests.skelethon.Endpoint;
-import requests.skelethon.requesters.CrudRequester;
-import requests.skelethon.requesters.ValidatedCrudRequester;
+import api.requests.skelethon.Endpoint;
+import api.requests.skelethon.requesters.CrudRequester;
+import api.requests.skelethon.requesters.ValidatedCrudRequester;
 
 public class DepositStep {
 

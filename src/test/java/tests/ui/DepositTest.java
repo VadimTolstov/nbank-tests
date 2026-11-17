@@ -1,26 +1,20 @@
 package tests.ui;
 
-import api.ApiErrors;
-import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Selectors;
-import com.codeborne.selenide.Selenide;
+import api.requests.skelethon.step.UserStep;
 import jupiter.annotation.ApiLogin;
 import jupiter.annotation.User;
 import jupiter.annotation.meta.WebTest;
 import models.rest.CreateUserJsonResponse;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.Arguments;
-import requests.skelethon.step.UserStep;
+import ui.pages.DepositPage;
 
 import java.math.BigDecimal;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static api.ApiLimits.*;
-import static com.codeborne.selenide.Selenide.$;
-import static com.codeborne.selenide.Selenide.$x;
 import static org.assertj.core.api.Assertions.assertThat;
+import static ui.pages.BankAlert.USER_CREATED_DEPOSIT_FAIL;
+import static ui.pages.BankAlert.USER_CREATED_DEPOSIT_SUCCESSFULLY;
 
 @WebTest
 public class DepositTest {
@@ -29,63 +23,32 @@ public class DepositTest {
     @ApiLogin
     @Test
     public void userDepositMoneyTest(CreateUserJsonResponse user) {
-        Long accountId = Objects.requireNonNull(user.accounts().getFirst().id());
-        String accountNumber = Objects.requireNonNull(user.accounts().getFirst().accountNumber());
-        Selenide.open("/deposit");
+        Long accountId = user.getAccountId();
+        String accountNumber = user.getFirstAccountNumber();
 
-        $x("//option[contains(text(), '-- Choose an account --')]")
-                .shouldBe(Condition.clickable)
-                .click();
-        $x("//option[contains(text(), '" + accountNumber + "')]")
-                .shouldBe(Condition.visible)
-                .click();
+        new DepositPage().open()
+                .selectAccountNumber(accountNumber)
+                .inputAmount(DEPOSIT_MAX_STR)
+                .clickSaveChanges()
+                .checkAlertMessageAndAccept(String.format(USER_CREATED_DEPOSIT_SUCCESSFULLY.getMessage(), DEPOSIT_MAX_STR, accountNumber));
 
-        $(Selectors.byAttribute("placeholder", "Enter amount"))
-                .shouldBe(Condition.visible)
-                .shouldBe(Condition.clickable)
-                .setValue(DEPOSIT_MAX_STR);
-
-        $x("//button[contains(text(), 'Deposit')]")
-                .shouldBe(Condition.clickable)
-                .click();
-
-        String alertText = Selenide.confirm();
-        Assertions.assertAll(
-                () -> assertThat(alertText).contains("✅ Successfully deposited $" + DEPOSIT_MAX_STR + " to account " + accountNumber),
-                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(user.username(), accountId)).balance())
-                        .isEqualByComparingTo(DEPOSIT_MAX)
-        );
+        assertThat(Objects.requireNonNull(UserStep.getAccountById(user.username(), accountId)).balance())
+                .isEqualByComparingTo(DEPOSIT_MAX);
     }
 
     @User(randomAccounts = 1)
     @ApiLogin
     @Test
     public void errorDuringUserDeposit(CreateUserJsonResponse user) {
-        Long accountId = Objects.requireNonNull(user.accounts().getFirst().id());
-        String accountNumber = Objects.requireNonNull(user.accounts().getFirst().accountNumber());
-        Selenide.open("/deposit");
+        Long accountId = user.getAccountId();
+        String accountNumber = user.getFirstAccountNumber();
+        new DepositPage().open()
+                .selectAccountNumber(accountNumber)
+                .inputAmount("-" + DEPOSIT_MIN_STR)
+                .clickSaveChanges()
+                .checkAlertMessageAndAccept(USER_CREATED_DEPOSIT_FAIL.getMessage());
 
-        $x("//option[contains(text(), '-- Choose an account --')]")
-                .shouldBe(Condition.clickable)
-                .click();
-        $x("//option[contains(text(), '" + accountNumber + "')]")
-                .shouldBe(Condition.visible)
-                .click();
-
-        $(Selectors.byAttribute("placeholder", "Enter amount"))
-                .shouldBe(Condition.visible)
-                .shouldBe(Condition.clickable)
-                .setValue("-" + DEPOSIT_MIN_STR);
-
-        $x("//button[contains(text(), 'Deposit')]")
-                .shouldBe(Condition.clickable)
-                .click();
-
-        String alertText = Selenide.confirm();
-        Assertions.assertAll(
-                () -> assertThat(alertText).contains("❌ Please enter a valid amount."),
-                () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(user.username(), accountId)).balance())
-                        .isEqualByComparingTo(BigDecimal.ZERO)
-        );
+        assertThat(Objects.requireNonNull(UserStep.getAccountById(user.username(), accountId)).balance())
+                .isEqualByComparingTo(BigDecimal.ZERO);
     }
 }

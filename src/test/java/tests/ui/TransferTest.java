@@ -1,8 +1,7 @@
 package tests.ui;
 
 import api.ApiLimits;
-import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Selectors;
+import api.requests.skelethon.step.UserStep;
 import com.codeborne.selenide.Selenide;
 import jupiter.annotation.Account;
 import jupiter.annotation.ApiLogin;
@@ -13,16 +12,16 @@ import models.TestData;
 import models.rest.CreateUserJsonResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import requests.skelethon.step.UserStep;
+import ui.pages.TransferPage;
 
 import java.math.BigDecimal;
 import java.util.Objects;
 
 import static api.ApiLimits.TRANSFER_MAX_STR;
 import static api.ApiLimits.TRANSFER_MIN_STR;
-import static com.codeborne.selenide.Selenide.$;
-import static com.codeborne.selenide.Selenide.$x;
 import static org.assertj.core.api.Assertions.assertThat;
+import static ui.pages.BankAlert.TRANSFER_FAILED_INSUFFICIENT_FUNDS;
+import static ui.pages.BankAlert.USER_TRANSFER_SUCCESSFULLY;
 
 @WebTest
 public class TransferTest {
@@ -39,40 +38,23 @@ public class TransferTest {
         CreateUserJsonResponse firstUser = data.requireByUsername("userTransferA");
         CreateUserJsonResponse secondUser = data.requireByUsername("userTransferB");
 
-        Long firstAccountId = firstUser.accounts().getFirst().id();
-        Long secondAccountId = secondUser.accounts().getFirst().id();
+        Long firstAccountId = firstUser.getAccountId();
+        Long secondAccountId = secondUser.getAccountId();
 
-        String firstAccountNumber = firstUser.accounts().getFirst().accountNumber();
-        String secondAccountNumber = secondUser.accounts().getFirst().accountNumber();
+        String firstAccountNumber = firstUser.getFirstAccountNumber();
+        String secondAccountNumber = secondUser.getFirstAccountNumber();
 
-        Selenide.open("/transfer");
-
-        $x("//option[contains(text(), '-- Choose an account --')]")
-                .shouldBe(Condition.clickable)
-                .click();
-
-        $x("//option[contains(text(), '" + firstAccountNumber + "')]")
-                .shouldBe(Condition.visible)
-                .click();
-
-
-        $(Selectors.byAttribute("placeholder", "Enter recipient account number"))
-                .shouldBe(Condition.visible)
-                .setValue(secondAccountNumber);
-
-        $(Selectors.byAttribute("placeholder", "Enter amount"))
-                .shouldBe(Condition.visible)
-                .setValue(TRANSFER_MAX_STR);
-
-        $("#confirmCheck").shouldBe(Condition.clickable).click();
-
-        $x("//button[contains(text(), 'Send Transfer')]")
-                .shouldBe(Condition.clickable)
-                .click();
-
-        String alertText = Selenide.confirm();
+        new TransferPage().open()
+                .transferBetweenAccounts(
+                        firstAccountNumber,
+                        secondAccountNumber,
+                        TRANSFER_MAX_STR
+                ).checkAlertMessageAndAccept(String.format(
+                        USER_TRANSFER_SUCCESSFULLY.getMessage(),
+                        TRANSFER_MAX_STR,
+                        secondAccountNumber
+                ));
         Assertions.assertAll(
-                () -> assertThat(alertText).contains("✅ Successfully transferred $" + TRANSFER_MAX_STR + " to account " + secondAccountNumber + "!"),
                 () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(firstUser.username(), firstAccountId)).balance())
                         .isEqualByComparingTo(BigDecimal.ZERO),
                 () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(secondUser.username(), secondAccountId)).balance())
@@ -93,39 +75,20 @@ public class TransferTest {
         CreateUserJsonResponse firstUser = data.requireByUsername("userTransfer1");
         CreateUserJsonResponse secondUser = data.requireByUsername("userTransfer2");
 
-        Long firstAccountId = firstUser.accounts().getFirst().id();
-        Long secondAccountId = secondUser.accounts().getFirst().id();
+        Long firstAccountId = firstUser.getAccountId();
+        Long secondAccountId = secondUser.getAccountId();
 
-        String firstAccountNumber = firstUser.accounts().getFirst().accountNumber();
-        String secondAccountNumber = secondUser.accounts().getFirst().accountNumber();
+        String firstAccountNumber = firstUser.getFirstAccountNumber();
+        String secondAccountNumber = secondUser.getFirstAccountNumber();
 
-        Selenide.open("/transfer");
+        new TransferPage().open()
+                .transferBetweenAccounts(
+                        firstAccountNumber,
+                        secondAccountNumber,
+                        TRANSFER_MAX_STR
+                ).checkAlertMessageAndAccept(TRANSFER_FAILED_INSUFFICIENT_FUNDS.getMessage());
 
-        $x("//option[contains(text(), '-- Choose an account --')]")
-                .shouldBe(Condition.clickable)
-                .click();
-
-        $x("//option[contains(text(), '" + firstAccountNumber + "')]")
-                .shouldBe(Condition.visible)
-                .click();
-
-        $(Selectors.byAttribute("placeholder", "Enter recipient account number"))
-                .shouldBe(Condition.visible)
-                .setValue(secondAccountNumber);
-
-        $(Selectors.byAttribute("placeholder", "Enter amount"))
-                .shouldBe(Condition.visible)
-                .setValue(TRANSFER_MAX_STR);
-
-        $("#confirmCheck").shouldBe(Condition.clickable).click();
-
-        $x("//button[contains(text(), 'Send Transfer')]")
-                .shouldBe(Condition.clickable)
-                .click();
-
-        String alertText = Selenide.confirm();
         Assertions.assertAll(
-                () -> assertThat(alertText).contains("❌ Error: Invalid transfer: insufficient funds or invalid accounts"),
                 () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(firstUser.username(), firstAccountId)).balance())
                         .isEqualByComparingTo(ApiLimits.TRANSFER_MIN_STR),
                 () -> assertThat(Objects.requireNonNull(UserStep.getAccountById(secondUser.username(), secondAccountId)).balance())

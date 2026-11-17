@@ -1,11 +1,11 @@
-package requests.skelethon.requesters;
+package api.requests.skelethon.requesters;
 
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import models.rest.BaseModel;
-import requests.skelethon.Endpoint;
-import requests.skelethon.HttpRequest;
-import requests.skelethon.interfaces.GetEndpointInterface;
+import api.requests.skelethon.Endpoint;
+import api.requests.skelethon.HttpRequest;
+import api.requests.skelethon.interfaces.GetEndpointInterface;
 
 public class ValidatedProfileRequester<T extends BaseModel> extends HttpRequest implements GetEndpointInterface {
     private final GetProfileRequester getProfileRequester;
