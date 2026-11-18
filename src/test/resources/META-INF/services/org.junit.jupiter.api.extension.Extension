@@ -1,3 +1,4 @@
+jupiter.extension.TimingExtension
 jupiter.extension.AuthExtension
 jupiter.extension.TestsMethodContextExtension
 jupiter.extension.CleanupSuiteExtension

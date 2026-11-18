@@ -2,6 +2,8 @@ package tests.api;
 
 import api.ApiErrors;
 import api.ApiLimits;
+import api.requests.skelethon.step.TransferStep;
+import api.requests.skelethon.step.UserStep;
 import jupiter.annotation.Account;
 import jupiter.annotation.ApiLogin;
 import jupiter.annotation.Data;
@@ -14,8 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import api.requests.skelethon.step.TransferStep;
-import api.requests.skelethon.step.UserStep;
 import utils.Repeat;
 
 import java.math.BigDecimal;
@@ -103,15 +103,15 @@ public class TransferTest {
      */
     @Data(
             users = {
-                    @User(username = "userTransferA", accounts = {@Account(balance = ApiLimits.TRANSFER_MAX_STR)}),
-                    @User(username = "userTransferB", randomAccounts = 1)
+                    @User(accounts = {@Account(balance = ApiLimits.TRANSFER_MAX_STR)}),
+                    @User(randomAccounts = 1)
             }
     )
     @ApiLogin
     @Test
     public void transferSequentiallySamePairTest(TestData data) {
-        CreateUserJsonResponse firstUser = data.requireByUsername("userTransferA");
-        CreateUserJsonResponse secondUser = data.requireByUsername("userTransferB");
+        CreateUserJsonResponse firstUser = data.usersJson().getFirst();
+        CreateUserJsonResponse secondUser = data.usersJson().getLast();
 
         Long firstAccountId = firstUser.accounts().getFirst().id();
         Long secondAccountId = secondUser.accounts().getFirst().id();
@@ -178,15 +178,15 @@ public class TransferTest {
      */
     @Data(
             users = {
-                    @User(username = "insufficientTr1", accounts = {@Account(balance = TRANSFER_MIN_STR)}),
-                    @User(username = "insufficientTr2", randomAccounts = 1)
+                    @User(accounts = {@Account(balance = TRANSFER_MIN_STR)}),
+                    @User(randomAccounts = 1)
             }
     )
     @ApiLogin
     @Test
     public void transferInsufficientFundsToForeignTest(TestData data) {
-        CreateUserJsonResponse firstUser = data.requireByUsername("insufficientTr1");
-        CreateUserJsonResponse secondUser = data.requireByUsername("insufficientTr2");
+        CreateUserJsonResponse firstUser = data.usersJson().getFirst();
+        CreateUserJsonResponse secondUser = data.usersJson().getLast();
 
         Long firstAccountId = firstUser.accounts().getFirst().id();
         Long secondAccountId = secondUser.accounts().getFirst().id();

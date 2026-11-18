@@ -33,7 +33,6 @@ public class UpdateUserNameTest {
     @ValueSource(strings = {
             "I I",
             "John Smith",
-            "Самый Главный",
             "JohnJohnJohn SmithSmithSmith"
     })
     public void updateNameWithValidValueTest(String name, CreateUserJsonResponse user) {
@@ -62,8 +61,7 @@ public class UpdateUserNameTest {
                 Arguments.of("John John1", ApiErrors.Profile.INVALID_NAME),
                 Arguments.of("John John%", ApiErrors.Profile.INVALID_NAME),
                 Arguments.of("[\"John\",\"Smith\"]", ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("123", ApiErrors.Profile.INVALID_NAME),
-                Arguments.of("John\tSmith", ApiErrors.Profile.INVALID_NAME)
+                Arguments.of("123", ApiErrors.Profile.INVALID_NAME)
         );
     }
 

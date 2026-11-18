@@ -31,6 +31,7 @@ public class BrowserExtension implements
             browser = "chrome";
         }
 
+        Configuration.headless = true;
         Configuration.browser = browser;
         Configuration.timeout = 8000;
         Configuration.pageLoadStrategy = "eager";
