@@ -5,6 +5,8 @@ import io.restassured.specification.ResponseSpecification;
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
 
+import java.util.List;
+
 /**
  * Стратегии валидации ответа.
  *
@@ -98,13 +100,10 @@ public final class ResponseSpecs {
                 .build();
     }
 
-    public static ResponseSpecification errorWithField( String key, Object value) {
+    public static ResponseSpecification errorWithField(String key, List<String> value) {
         return new ResponseSpecBuilder()
                 .expectStatusCode(HttpStatus.SC_BAD_REQUEST)
-                .expectBody(key, Matchers.anyOf(
-                        Matchers.equalTo(value),
-                        Matchers.hasItem(value)
-                ))
+                .expectBody(key, Matchers.containsInAnyOrder(value.toArray())                        )
                 .build();
     }
 

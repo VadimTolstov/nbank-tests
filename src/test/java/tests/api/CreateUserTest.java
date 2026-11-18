@@ -1,6 +1,9 @@
 package tests.api;
 
 import api.ApiErrors;
+import api.requests.skelethon.Endpoint;
+import api.requests.skelethon.requesters.CrudRequester;
+import api.requests.skelethon.step.AdminStep;
 import api.spec.RequestSpecs;
 import api.spec.ResponseSpecs;
 import generators.RandomModelGenerator;
@@ -15,10 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import api.requests.skelethon.Endpoint;
-import api.requests.skelethon.requesters.CrudRequester;
-import api.requests.skelethon.step.AdminStep;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 @RestTest
@@ -37,21 +38,21 @@ public class CreateUserTest {
 
     public static Stream<Arguments> userInvalidData() {
         return Stream.of(
-                Arguments.of("   ", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_BLANK),
-                Arguments.of("ab", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_LENGTH),
-                Arguments.of("abc$", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_INVALID_CHARS),
-                Arguments.of("abc%", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, ApiErrors.User.USERNAME_INVALID_CHARS)
+                Arguments.of("   ", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, List.of(ApiErrors.User.USERNAME_BLANK, ApiErrors.User.USERNAME_INVALID_CHARS)),
+                Arguments.of("ab", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, List.of(ApiErrors.User.USERNAME_LENGTH)),
+                Arguments.of("abc$", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, List.of(ApiErrors.User.USERNAME_INVALID_CHARS)),
+                Arguments.of("abc%", "Password33$", UserRole.USER, ApiErrors.KEY_USERNAME, List.of(ApiErrors.User.USERNAME_INVALID_CHARS))
         );
     }
 
     @AdminApiLogin
     @MethodSource("userInvalidData")
     @ParameterizedTest(name = "[{index}] username={0} → {4}")
-    public void adminCanNotCreateUserWithInvalidData(String username, String password, UserRole role, String errorKey, String errorValue) {
+    public void adminCanNotCreateUserWithInvalidData(String username, String password, UserRole role, String errorKey, List<String> errorValues) {
         new CrudRequester(
                 RequestSpecs.adminSpec(),
                 Endpoint.ADMIN_USER,
-                ResponseSpecs.errorWithField(errorKey, errorValue)
+                ResponseSpecs.errorWithField(errorKey, errorValues)
         ).post(new CreateUserJsonRequest(username, password, role));
 
         Assertions.assertNull(AdminStep.getUserByUsername(username));
